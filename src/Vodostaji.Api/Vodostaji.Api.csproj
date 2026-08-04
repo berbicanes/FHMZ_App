@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Vodostaji.Api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Vodostaji.Core/Vodostaji.Core.csproj" />
+    <ProjectReference Include="../Vodostaji.Data/Vodostaji.Data.csproj" />
+    <ProjectReference Include="../Vodostaji.Ingest/Vodostaji.Ingest.csproj" />
+  </ItemGroup>
+
+</Project>

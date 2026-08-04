@@ -1,3 +1,4 @@
+using Vodostaji.Core;
 using Vodostaji.Probe;
 
 var options = ProbeOptions.Parse(args);
@@ -19,7 +20,7 @@ Console.CancelKeyPress += (_, e) =>
 var runStamp = DateTimeOffset.UtcNow;
 
 Console.WriteLine($"Probe — Faza 0 · {runStamp:yyyy-MM-dd HH:mm:ss}Z");
-Console.WriteLine($"User-Agent: {Contact.UserAgent}");
+Console.WriteLine($"User-Agent: {Contact.ProbeUserAgent}");
 Console.WriteLine($"Fixtures:   {options.FixtureRoot}");
 Console.WriteLine($"Pauza:      {options.Delay.TotalMilliseconds:N0}ms između zahtjeva");
 Console.WriteLine();

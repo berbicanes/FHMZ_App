@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Vodostaji.Api/Vodostaji.Api.csproj" />
     <Project Path="src/Vodostaji.Core/Vodostaji.Core.csproj" />
     <Project Path="src/Vodostaji.Data/Vodostaji.Data.csproj" />
     <Project Path="src/Vodostaji.Ingest/Vodostaji.Ingest.csproj" />

@@ -41,7 +41,6 @@ public sealed record IngestOptions
 public sealed class SourceIngestRunner
 {
     private readonly IStationDataSource _source;
-    private readonly IReadingStore _store;
     private readonly TimeProvider _time;
     private readonly CircuitBreaker _breaker;
 
@@ -53,18 +52,23 @@ public sealed class SourceIngestRunner
 
     public SourceIngestRunner(
         IStationDataSource source,
-        IReadingStore store,
         TimeProvider timeProvider,
         IngestOptions? options = null)
     {
         var settings = options ?? new IngestOptions();
 
         _source = source;
-        _store = store;
         _time = timeProvider;
         _breaker = new CircuitBreaker(
             settings.FailureThreshold, settings.InitialCooldown, settings.MaxCooldown, timeProvider);
     }
+
+    /// <summary>
+    /// Zadnje uspješno povlačenje, već validirano. Ostaje netaknuto kad izvor padne —
+    /// ono što se od njega gradi (GeoJSON za mapu) time zadržava stari podatak sa starim
+    /// vremenom, umjesto da nestane.
+    /// </summary>
+    public SourceFetchResult? LastSuccessfulResult { get; private set; }
 
     public SourceStatus Status => new()
     {
@@ -80,7 +84,13 @@ public sealed class SourceIngestRunner
         ClockEvidence = _source.Clock.Evidence,
     };
 
-    public async Task<IngestOutcome> RunOnceAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Skladište ulazi po pozivu, ne u konstruktor. Runner živi koliko i proces, a
+    /// `DbContext` koliko i jedan zahtjev — držanje skladišta u polju bi ga zaključalo
+    /// na prvi scope koji ga je vidio.
+    /// </summary>
+    public async Task<IngestOutcome> RunOnceAsync(
+        IReadingStore store, CancellationToken cancellationToken)
     {
         var now = _time.GetUtcNow();
 
@@ -106,7 +116,7 @@ public sealed class SourceIngestRunner
         }
 
         if (result.Readings.Count == 0 &&
-            await _store.CountAsync(_source.SourceId, cancellationToken).ConfigureAwait(false) > 0)
+            await store.CountAsync(_source.SourceId, cancellationToken).ConfigureAwait(false) > 0)
         {
             _breaker.RecordFailure();
             _lastFailureReason =
@@ -124,11 +134,12 @@ public sealed class SourceIngestRunner
             Skipped = [.. result.Skipped, .. validated.Rejected],
         };
 
-        await _store.SaveAsync(toStore, cancellationToken).ConfigureAwait(false);
+        await store.SaveAsync(toStore, cancellationToken).ConfigureAwait(false);
 
         _breaker.RecordSuccess();
         _lastSuccessAt = now;
         _lastFailureReason = null;
+        LastSuccessfulResult = toStore;
         _knownCount = toStore.KnownCount;
         _unknownCount = toStore.UnknownCount;
 

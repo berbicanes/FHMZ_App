@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
+using Vodostaji.Core;
+
 namespace Vodostaji.Probe;
 
 /// <summary>
@@ -22,7 +24,7 @@ internal static class SchemaReport
 
         sb.AppendLine($"# Probe izvještaj — {stamp}");
         sb.AppendLine();
-        sb.AppendLine($"Generisano: `{runStamp:yyyy-MM-dd HH:mm:ss}Z` · User-Agent: `{Contact.UserAgent}`");
+        sb.AppendLine($"Generisano: `{runStamp:yyyy-MM-dd HH:mm:ss}Z` · User-Agent: `{Contact.ProbeUserAgent}`");
         sb.AppendLine();
         sb.AppendLine("Ovaj fajl je izvor istine za regeneraciju `docs/SOURCES.md`.");
         sb.AppendLine();

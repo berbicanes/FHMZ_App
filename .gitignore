@@ -41,3 +41,6 @@ tests/fixtures/_watch/*.html
 
 # Log watch moda se prepisuje stalno; artefakt je watch.csv.
 tests/fixtures/_watch/watch.log
+
+# GeoJSON mape generiše ingest job pri svakom pokretanju.
+src/Vodostaji.Api/data/

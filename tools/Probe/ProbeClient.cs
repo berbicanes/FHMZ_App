@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Net;
 
+using Vodostaji.Core;
+
 namespace Vodostaji.Probe;
 
 internal sealed record ProbeResult(
@@ -40,7 +42,7 @@ internal sealed class ProbeClient : IDisposable
         {
             Timeout = TimeSpan.FromSeconds(60),
         };
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd(Contact.UserAgent);
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd(Contact.ProbeUserAgent);
     }
 
     public IReadOnlyList<ProbeResult> Results => _results;

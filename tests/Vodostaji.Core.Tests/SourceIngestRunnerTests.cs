@@ -13,9 +13,9 @@ public class SourceIngestRunnerTests
         var clock = new TestClock(Start);
         var source = new FakeSource(() => Build.Ok(Start, Build.Measured(Start.AddMinutes(-10))));
         var store = new FakeStore();
-        var runner = new SourceIngestRunner(source, store, clock);
+        var runner = new SourceIngestRunner(source, clock);
 
-        var outcome = await runner.RunOnceAsync(CancellationToken.None);
+        var outcome = await runner.RunOnceAsync(store, CancellationToken.None);
 
         Assert.Equal(IngestOutcome.Succeeded, outcome);
         Assert.Equal(1, store.SaveCount);
@@ -31,16 +31,17 @@ public class SourceIngestRunnerTests
         {
             MinimumFetchInterval = TimeSpan.FromMinutes(15),
         };
-        var runner = new SourceIngestRunner(source, new FakeStore(), clock);
+        var store = new FakeStore();
+        var runner = new SourceIngestRunner(source, clock);
 
-        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(store, CancellationToken.None));
 
         clock.Advance(TimeSpan.FromMinutes(14));
-        Assert.Equal(IngestOutcome.SkippedTooSoon, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.SkippedTooSoon, await runner.RunOnceAsync(store, CancellationToken.None));
         Assert.Equal(1, source.Calls);
 
         clock.Advance(TimeSpan.FromMinutes(1));
-        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(store, CancellationToken.None));
         Assert.Equal(2, source.Calls);
     }
 
@@ -52,9 +53,9 @@ public class SourceIngestRunnerTests
         store.Seed("fake", Build.Measured(Start.AddHours(-3)));
 
         var runner = new SourceIngestRunner(
-            new FakeSource(() => Build.Down(Start, "server ne odgovara")), store, clock);
+            new FakeSource(() => Build.Down(Start, "server ne odgovara")), clock);
 
-        var outcome = await runner.RunOnceAsync(CancellationToken.None);
+        var outcome = await runner.RunOnceAsync(store, CancellationToken.None);
 
         Assert.Equal(IngestOutcome.Failed, outcome);
 
@@ -72,9 +73,9 @@ public class SourceIngestRunnerTests
         var store = new FakeStore();
         store.Seed("fake", Build.Measured(Start.AddHours(-1), key: "1"), Build.Measured(Start, key: "2"));
 
-        var runner = new SourceIngestRunner(new FakeSource(() => Build.Ok(Start)), store, clock);
+        var runner = new SourceIngestRunner(new FakeSource(() => Build.Ok(Start)), clock);
 
-        var outcome = await runner.RunOnceAsync(CancellationToken.None);
+        var outcome = await runner.RunOnceAsync(store, CancellationToken.None);
 
         Assert.Equal(IngestOutcome.RejectedEmpty, outcome);
         Assert.Equal(0, store.SaveCount);
@@ -85,10 +86,11 @@ public class SourceIngestRunnerTests
     public async Task Prazan_odgovor_na_praznoj_bazi_je_legitiman()
     {
         var clock = new TestClock(Start);
-        var runner = new SourceIngestRunner(new FakeSource(() => Build.Ok(Start)), new FakeStore(), clock);
+        var store = new FakeStore();
+        var runner = new SourceIngestRunner(new FakeSource(() => Build.Ok(Start)), clock);
 
         // Prvo pokretanje protiv izvora koji stvarno nema nijednu stanicu nije greška.
-        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(store, CancellationToken.None));
     }
 
     [Fact]
@@ -96,12 +98,13 @@ public class SourceIngestRunnerTests
     {
         var clock = new TestClock(Start);
         var source = new FakeSource(() => Build.Down(Start)) { MinimumFetchInterval = TimeSpan.Zero };
-        var runner = new SourceIngestRunner(source, new FakeStore(), clock,
+        var store = new FakeStore();
+        var runner = new SourceIngestRunner(source, clock,
             new IngestOptions { FailureThreshold = 3, InitialCooldown = TimeSpan.FromMinutes(15) });
 
         for (var i = 0; i < 3; i++)
         {
-            Assert.Equal(IngestOutcome.Failed, await runner.RunOnceAsync(CancellationToken.None));
+            Assert.Equal(IngestOutcome.Failed, await runner.RunOnceAsync(store, CancellationToken.None));
             clock.Advance(TimeSpan.FromMinutes(1));
         }
 
@@ -109,7 +112,7 @@ public class SourceIngestRunnerTests
 
         // Otvoren osigurač znači da se izvor više ne dira.
         var callsBefore = source.Calls;
-        Assert.Equal(IngestOutcome.SkippedCircuitOpen, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.SkippedCircuitOpen, await runner.RunOnceAsync(store, CancellationToken.None));
         Assert.Equal(callsBefore, source.Calls);
     }
 
@@ -124,19 +127,20 @@ public class SourceIngestRunnerTests
             MinimumFetchInterval = TimeSpan.Zero,
         };
 
-        var runner = new SourceIngestRunner(source, new FakeStore(), clock,
+        var store = new FakeStore();
+        var runner = new SourceIngestRunner(source, clock,
             new IngestOptions { FailureThreshold = 3, InitialCooldown = TimeSpan.FromMinutes(15) });
 
         for (var i = 0; i < 3; i++)
         {
-            await runner.RunOnceAsync(CancellationToken.None);
+            await runner.RunOnceAsync(store, CancellationToken.None);
         }
 
         Assert.Equal(CircuitState.Open, runner.Status.Circuit);
 
         clock.Advance(TimeSpan.FromMinutes(16));
 
-        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(store, CancellationToken.None));
         Assert.Equal(CircuitState.Closed, runner.Status.Circuit);
         Assert.Equal(0, runner.Status.ConsecutiveFailures);
     }
@@ -146,7 +150,8 @@ public class SourceIngestRunnerTests
     {
         var clock = new TestClock(Start);
         var source = new FakeSource(() => Build.Down(Start)) { MinimumFetchInterval = TimeSpan.Zero };
-        var runner = new SourceIngestRunner(source, new FakeStore(), clock,
+        var store = new FakeStore();
+        var runner = new SourceIngestRunner(source, clock,
             new IngestOptions
             {
                 FailureThreshold = 2,
@@ -154,19 +159,19 @@ public class SourceIngestRunnerTests
                 MaxCooldown = TimeSpan.FromHours(4),
             });
 
-        await runner.RunOnceAsync(CancellationToken.None);
-        await runner.RunOnceAsync(CancellationToken.None);
+        await runner.RunOnceAsync(store, CancellationToken.None);
+        await runner.RunOnceAsync(store, CancellationToken.None);
         Assert.Equal(CircuitState.Open, runner.Status.Circuit);
 
         // Prvo hlađenje je 15 min; nakon pada u poluotvorenom postaje 30.
         clock.Advance(TimeSpan.FromMinutes(16));
-        Assert.Equal(IngestOutcome.Failed, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.Failed, await runner.RunOnceAsync(store, CancellationToken.None));
 
         clock.Advance(TimeSpan.FromMinutes(16));
-        Assert.Equal(IngestOutcome.SkippedCircuitOpen, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.SkippedCircuitOpen, await runner.RunOnceAsync(store, CancellationToken.None));
 
         clock.Advance(TimeSpan.FromMinutes(15));
-        Assert.Equal(IngestOutcome.Failed, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.Failed, await runner.RunOnceAsync(store, CancellationToken.None));
     }
 
     [Fact]
@@ -175,9 +180,9 @@ public class SourceIngestRunnerTests
         var clock = new TestClock(Start);
         var source = new FakeSource(() => Build.Ok(Start, Build.Measured(Start.AddMinutes(45))));
         var store = new FakeStore();
-        var runner = new SourceIngestRunner(source, store, clock);
+        var runner = new SourceIngestRunner(source, clock);
 
-        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(CancellationToken.None));
+        Assert.Equal(IngestOutcome.Succeeded, await runner.RunOnceAsync(store, CancellationToken.None));
 
         var saved = Assert.IsType<SourceFetchResult>(store.LastSaved);
 
@@ -200,11 +205,12 @@ public class SourceIngestRunnerTests
             MinimumFetchInterval = TimeSpan.Zero,
         };
 
-        var runner = new SourceIngestRunner(source, new FakeStore(), clock);
+        var store = new FakeStore();
+        var runner = new SourceIngestRunner(source, clock);
 
-        await runner.RunOnceAsync(CancellationToken.None);
+        await runner.RunOnceAsync(store, CancellationToken.None);
         clock.Advance(TimeSpan.FromHours(6));
-        await runner.RunOnceAsync(CancellationToken.None);
+        await runner.RunOnceAsync(store, CancellationToken.None);
 
         // Izvor koji se pokušava a ne uspijeva od jutros nije isto što i svjež izvor.
         Assert.Equal(Start, runner.Status.LastSuccessAt);

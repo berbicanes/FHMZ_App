@@ -15,4 +15,8 @@
     <PackageReference Include="AngleSharp" Version="1.7.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Vodostaji.Core\Vodostaji.Core.csproj" />
+  </ItemGroup>
+
 </Project>
