@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using Vodostaji.Api;
 using Vodostaji.Core;
@@ -38,6 +39,17 @@ builder.Services.AddSingleton(services => new ReachMapFile(
 
 builder.Services.AddHostedService<IngestHostedService>();
 
+// OpenAPI shema postoji da bi se TypeScript tipovi **generisali**, ne pisali ručno
+// (CLAUDE.md → Konvencije). `npm run generate:api` u src/Vodostaji.Web je čita odavde.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options => options.SwaggerDoc("v1", new OpenApiInfo
+{
+    Title = "Vodostaji BiH",
+    Version = "v1",
+    Description = "Stanje rijeka u BiH, objedinjeno iz javnih izvora više agencija. "
+                + "Podaci nisu zvanični i ne služe za odbranu od poplava.",
+}));
+
 // Enum-i kao tekst. `"circuit": 0` u API-ju ne znači ništa nikome ko ne gleda izvorni kod,
 // a `"circuit": "Closed"` znači svima.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -53,6 +65,8 @@ builder.Services.AddResponseCompression(options =>
 
 var app = builder.Build();
 
+app.UseSwagger();
+
 app.UseResponseCompression();
 app.UseSerilogRequestLogging();
 
@@ -67,11 +81,17 @@ app.MapGet("/api/v1/geojson/reaches", async (ReachMapFile file, CancellationToke
             "Mapa još nije generisana. Ingest nije uspio nijednom od pokretanja.",
             statusCode: StatusCodes.Status503ServiceUnavailable)
         : Results.Text(geoJson, "application/geo+json");
-});
+})
+   // Tijelo je već serijalizovan GeoJSON, ali shema mora u OpenAPI da bi se TS tipovi
+   // generisali iz istog izvora iz kojeg backend gradi odgovor.
+   .Produces<ReachFeatureCollection>(StatusCodes.Status200OK, "application/geo+json")
+   .WithName("GetReaches");
 
 // Stanje izvora, vidljivo u UI-u. Ovdje se vidi razlika između "jug je prazan"
 // i "jug je bez podatka", i ovdje stoji dokaz za pretpostavku o vremenskoj zoni.
-app.MapGet("/api/v1/sources", (SourceIngestRunner runner) => Results.Json(new[] { runner.Status }));
+app.MapGet("/api/v1/sources", (SourceIngestRunner runner) => Results.Ok(new[] { runner.Status }))
+   .Produces<SourceStatus[]>()
+   .WithName("GetSources");
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 

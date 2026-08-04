@@ -1,0 +1,347 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Vodostaji BiH",
+    "description": "Stanje rijeka u BiH, objedinjeno iz javnih izvora više agencija. Podaci nisu zvanični i ne služe za odbranu od poplava.",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/geojson/reaches": {
+      "get": {
+        "tags": [
+          "Vodostaji.Api"
+        ],
+        "operationId": "GetReaches",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReachFeatureCollection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sources": {
+      "get": {
+        "tags": [
+          "Vodostaji.Api"
+        ],
+        "operationId": "GetSources",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SourceStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Vodostaji.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CircuitState": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ReachFeature": {
+        "required": [
+          "geometry",
+          "properties"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "geometry": {
+            "nullable": true
+          },
+          "properties": {
+            "$ref": "#/components/schemas/ReachProperties"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReachFeatureCollection": {
+        "required": [
+          "features",
+          "meta"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true,
+            "readOnly": true
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ReachMeta"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReachFeature"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReachMeta": {
+        "required": [
+          "fetchedAt",
+          "generatedAt",
+          "knownCount",
+          "reachCount",
+          "sourceId",
+          "unknownCount",
+          "withoutGeometry"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reachCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "knownCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unknownCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutGeometry": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReachProperties": {
+        "required": [
+          "agencyName",
+          "agencyUrl",
+          "color",
+          "expectedIntervalMinutes",
+          "fetchedAt",
+          "level",
+          "levelLabel",
+          "name",
+          "sourceId",
+          "stationKey",
+          "statusLabelOriginal"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "stationKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "river": {
+            "type": "string",
+            "nullable": true
+          },
+          "level": {
+            "type": "string",
+            "nullable": true
+          },
+          "levelLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusLabelOriginal": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueCm": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ageMinutes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "expectedIntervalMinutes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ageRatio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "agencyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "agencyUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "noDataReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "thresholds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReachThreshold"
+            },
+            "nullable": true
+          },
+          "thresholdsDefinedBy": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReachThreshold": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "valueCm": {
+            "type": "number",
+            "format": "double"
+          },
+          "level": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SourceStatus": {
+        "required": [
+          "agencyName",
+          "clockEvidence",
+          "sourceId"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "agencyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastAttemptAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastSuccessAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "consecutiveFailures": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "circuit": {
+            "$ref": "#/components/schemas/CircuitState"
+          },
+          "lastFailureReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "knownCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unknownCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "clockEvidence": {
+            "type": "string",
+            "nullable": true
+          },
+          "isHealthy": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+import type { ReachProperties } from '../api/types'
+
+/**
+ * Prikaz starosti podatka, po tabeli iz UI.md §2.
+ *
+ * Pragovi su izraženi u **očekivanim intervalima te stanice**, ne u satima. Stanica koja
+ * se javlja jednom dnevno i ona koja se javlja svakih 15 minuta ne stare istom brzinom,
+ * pa bi fiksni prag jednu prikazivao kao zastarjelu a drugu kao svježu dok obje kasne.
+ */
+export type Freshness = 'fresh' | 'ageing' | 'stale' | 'unknown'
+
+export function freshnessOf(properties: ReachProperties): Freshness {
+  // Nema podatka je vlastito stanje, ne najstariji stepen starosti. Zlatno pravilo 1.
+  if (properties.valueCm === null || properties.valueCm === undefined) return 'unknown'
+  if (properties.measuredAt === null || properties.measuredAt === undefined) return 'unknown'
+
+  const ratio = properties.ageRatio
+  if (ratio === null || ratio === undefined) return 'unknown'
+
+  if (ratio > 3) return 'stale'
+  if (ratio >= 1) return 'ageing'
+  return 'fresh'
+}
+
+/** Neprozirnost ispune. Stariji podatak je vidljivo bljeđi (UI.md §2). */
+export function fillOpacityOf(freshness: Freshness): number {
+  switch (freshness) {
+    case 'fresh':
+      return 0.85
+    case 'ageing':
+      return 0.6
+    case 'stale':
+      return 0.45
+    case 'unknown':
+      return 0.75
+  }
+}
+
+/**
+ * Tekst uz boju. Boja nikad nije jedini nosilac informacije (UI.md §5), pa svaka
+ * dionica nosi i rečenicu koja kaže isto što i boja.
+ */
+export function freshnessLabel(properties: ReachProperties): string {
+  const freshness = freshnessOf(properties)
+
+  if (freshness === 'unknown') {
+    return properties.noDataReason ? 'Nema podatka' : 'Nema podatka'
+  }
+
+  if (freshness === 'stale') return 'Podatak zastario'
+
+  return relativeAge(properties.ageMinutes ?? 0)
+}
+
+/**
+ * Čitljiv timestamp, ne ISO string (UI.md §3).
+ * Vrijeme mjerenja, nikad vrijeme dohvata.
+ */
+export function relativeAge(minutes: number): string {
+  if (minutes < 0) return 'iz budućnosti'
+  if (minutes < 60) return `prije ${minutes} min`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `prije ${hours} h`
+
+  const days = Math.floor(hours / 24)
+  return days === 1 ? 'prije 1 dan' : `prije ${days} dana`
+}
+
+/** Apsolutno vrijeme mjerenja, u lokalnoj zoni korisnika, čitljivo. */
+export function formatMeasuredAt(iso: string | null | undefined): string | null {
+  if (!iso) return null
+
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+
+  const today = new Date()
+  const sameDay =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+
+  const time = date.toLocaleTimeString('bs-BA', { hour: '2-digit', minute: '2-digit' })
+
+  return sameDay
+    ? `danas u ${time}`
+    : `${date.toLocaleDateString('bs-BA', { day: 'numeric', month: 'numeric' })} u ${time}`
+}

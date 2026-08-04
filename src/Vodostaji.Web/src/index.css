@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  /* Boje statusa dolaze iz renderera agencije (SOURCES.md §1.1) i ne biraju se ovdje.
+     Stoje kao varijable samo da legenda i mapa koriste isti izvor. */
+  --color-status-normal: #38a800;
+  --color-status-elevated: #ffff00;
+  --color-status-flood: #ffaa00;
+  --color-status-emergency: #e60000;
+  --color-status-unknown: #cccccc;
+
+  /* Podloga je tamna da bi boje statusa bile najsvjetlija stvar na ekranu (UI.md §6).
+     Ništa drugo se s njima ne takmiči. */
+  --color-surface: #0d1117;
+  --color-surface-raised: #161b22;
+  --color-border: #30363d;
+  --color-text: #e6edf3;
+  --color-text-muted: #9198a1;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Vodostaj je heroj ekrana, a brojevi ne smiju poskakivati pri osvježavanju (UI.md §6). */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Vidljivo focus stanje na svemu fokusabilnom (UI.md §5). */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+/* Jedina animacija u aplikaciji je prelaz boje kad se status promijeni (UI.md §6).
+   Sve ostalo je šum. */
+.status-swatch {
+  transition: background-color 400ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* MapLibre podrazumijevano nosi svijetle kontrole; usklađujemo ih sa tamnom podlogom. */
+.maplibregl-ctrl-group {
+  background: var(--color-surface-raised) !important;
+  border: 1px solid var(--color-border);
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--color-border);
+}
+
+.maplibregl-ctrl-group button span {
+  filter: invert(1);
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgb(13 17 23 / 0.85) !important;
+  color: var(--color-text-muted);
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--color-text-muted);
+}

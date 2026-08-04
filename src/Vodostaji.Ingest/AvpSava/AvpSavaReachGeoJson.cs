@@ -1,7 +1,7 @@
-using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Vodostaji.Core;
 
 namespace Vodostaji.Ingest.AvpSava;
@@ -13,15 +13,17 @@ namespace Vodostaji.Ingest.AvpSava;
 /// stapanje agencija u jedan sloj sa jednom legendom je zabranjeno — jug mape mora izgledati
 /// kao jug bez podatka, ne kao dio iste priče.
 ///
-/// Sve što UI treba da bude pošten je **u fajlu**: vrijeme mjerenja, starost, ime agencije,
-/// link, i razlog kad podatka nema. Ništa od toga se ne dograđuje u browseru.
+/// Svojstva se sklapaju u <see cref="ReachProperties"/> pa serijalizuju. Taj tip je jedini
+/// izvor istine: iz njega ide OpenAPI shema, a iz nje TypeScript tipovi.
 /// </summary>
 public static class AvpSavaReachGeoJson
 {
     private static readonly JsonSerializerOptions Options = new()
     {
-        WriteIndented = false,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        WriteIndented = false,
     };
 
     public static string Build(
@@ -43,92 +45,83 @@ public static class AvpSavaReachGeoJson
             features.Add(new JsonObject
             {
                 ["type"] = "Feature",
+                // Geometrija se ubacuje kao već serijalizovan tekst — poligon koji prođe
+                // kroz naš model pa se ponovo ispiše je poligon koji smo mi prepisali.
                 ["geometry"] = JsonNode.Parse(geometry),
-                ["properties"] = Properties(reading, result.FetchedAt, now),
+                ["properties"] = JsonSerializer.SerializeToNode(
+                    Properties(reading, result.FetchedAt, now), Options),
             });
         }
+
+        var meta = new ReachMeta
+        {
+            SourceId = result.SourceId,
+            FetchedAt = result.FetchedAt,
+            GeneratedAt = now,
+            ReachCount = result.Readings.Count,
+            KnownCount = result.KnownCount,
+            UnknownCount = result.UnknownCount,
+            WithoutGeometry = withoutGeometry,
+        };
 
         var collection = new JsonObject
         {
             ["type"] = "FeatureCollection",
-            // Meta ide u fajl da bi UI mogao reći "podaci od …" bez zasebnog poziva,
-            // i da bi se u browseru vidjelo koliko dionica nema geometriju.
-            ["meta"] = new JsonObject
-            {
-                ["sourceId"] = result.SourceId,
-                ["fetchedAt"] = result.FetchedAt.ToString("O", CultureInfo.InvariantCulture),
-                ["generatedAt"] = now.ToString("O", CultureInfo.InvariantCulture),
-                ["reachCount"] = result.Readings.Count,
-                ["knownCount"] = result.KnownCount,
-                ["unknownCount"] = result.UnknownCount,
-                ["withoutGeometry"] = withoutGeometry,
-            },
+            ["meta"] = JsonSerializer.SerializeToNode(meta, Options),
             ["features"] = features,
         };
 
         return collection.ToJsonString(Options);
     }
 
-    private static JsonObject Properties(
+    private static ReachProperties Properties(
         StationReading reading, DateTimeOffset fetchedAt, DateTimeOffset now)
     {
         var measurement = reading.Measurement;
+        var age = measurement?.AgeAt(now);
 
-        var properties = new JsonObject
+        return new ReachProperties
         {
-            ["sourceId"] = reading.Station.SourceId,
-            ["stationKey"] = reading.Station.StationKey,
-            ["name"] = reading.Station.Name,
-            ["river"] = reading.Station.River,
+            SourceId = reading.Station.SourceId,
+            StationKey = reading.Station.StationKey,
+            Name = reading.Station.Name,
+            River = reading.Station.River,
 
-            ["level"] = reading.Level.ToString(),
-            ["levelLabel"] = AvpSavaLegend.Label(reading.Level),
-            ["color"] = AvpSavaLegend.Color(reading.Level),
+            Level = reading.Level.ToString(),
+            LevelLabel = AvpSavaLegend.Label(reading.Level),
+            Color = AvpSavaLegend.Color(reading.Level),
 
             // Doslovni tekst agencije putuje do browsera. Bez njega korisniku možemo
             // pokazati samo naš prevod njihove tvrdnje.
-            ["statusLabelOriginal"] = reading.StatusLabelOriginal,
+            StatusLabelOriginal = reading.StatusLabelOriginal,
 
-            ["valueCm"] = measurement is null ? null : JsonValue.Create(measurement.ValueCm),
+            ValueCm = measurement?.ValueCm,
+            MeasuredAt = measurement?.MeasuredAt,
+            FetchedAt = fetchedAt,
 
-            // Vrijeme mjerenja i vrijeme dohvata su dva odvojena polja i u fajlu.
-            ["measuredAt"] = measurement?.MeasuredAt.ToString("O", CultureInfo.InvariantCulture),
-            ["fetchedAt"] = fetchedAt.ToString("O", CultureInfo.InvariantCulture),
+            AgeMinutes = age is null ? null : (long)Math.Round(age.Value.TotalMinutes),
+            ExpectedIntervalMinutes = (long)reading.Station.ExpectedInterval.TotalMinutes,
 
-            // Starost ide gotova, da UI ne mora računati i da ne može pogriješiti u računu.
-            ["ageMinutes"] = measurement is null
+            // Starost u očekivanim intervalima. UI.md §2 dijeli prikaz na <1×, 1–3× i >3×,
+            // pa mu se daje omjer umjesto gotove ocjene — prag prikaza je odluka UI-a.
+            AgeRatio = age is null
                 ? null
-                : JsonValue.Create((long)Math.Round(measurement.AgeAt(now).TotalMinutes)),
-
-            ["expectedIntervalMinutes"] = (long)reading.Station.ExpectedInterval.TotalMinutes,
-            ["isStale"] = measurement is not null &&
-                          measurement.AgeAt(now) > reading.Station.ExpectedInterval * 2,
+                : Math.Round(age.Value / reading.Station.ExpectedInterval, 2),
 
             // Atribucija po dionici, ne u footeru (LEGAL.md §2.1).
-            ["agencyName"] = reading.Station.Attribution.AgencyName,
-            ["agencyUrl"] = reading.Station.Attribution.AgencyUrl.ToString(),
-            ["sourceUrl"] = reading.Station.Attribution.SourceUrl?.ToString(),
+            AgencyName = reading.Station.Attribution.AgencyName,
+            AgencyUrl = reading.Station.Attribution.AgencyUrl.ToString(),
+            SourceUrl = reading.Station.Attribution.SourceUrl?.ToString(),
 
-            ["noDataReason"] = reading is StationReading.NoData noData ? noData.Reason : null,
+            NoDataReason = reading is StationReading.NoData noData ? noData.Reason : null,
+
+            Thresholds = reading.Thresholds is { IsEmpty: false } thresholds
+                ? [.. thresholds.Values.Select(t =>
+                    new ReachThreshold(t.LabelOriginal, t.ValueCm, t.Level?.ToString()))]
+                : null,
+            ThresholdsDefinedBy = reading.Thresholds is { IsEmpty: false } defined
+                ? defined.DefinedBy
+                : null,
         };
-
-        if (reading.Thresholds is { IsEmpty: false } thresholds)
-        {
-            var list = new JsonArray();
-            foreach (var threshold in thresholds.Values)
-            {
-                list.Add(new JsonObject
-                {
-                    ["label"] = threshold.LabelOriginal,
-                    ["valueCm"] = JsonValue.Create(threshold.ValueCm),
-                    ["level"] = threshold.Level?.ToString(),
-                });
-            }
-
-            properties["thresholds"] = list;
-            properties["thresholdsDefinedBy"] = thresholds.DefinedBy;
-        }
-
-        return properties;
     }
 }
