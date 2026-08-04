@@ -38,7 +38,11 @@ public class UnknownNikadNijeNormalTests
             Station = BiloKoja_Stanica,
             StatusLabelOriginal = "Nema podataka o vodostaju",
             Reason = "DATE_TIME je null",
-            Thresholds = new Thresholds { DefinedBy = "AVP Sava", RegularDefenceCm = 300 },
+            Thresholds = new Thresholds
+            {
+                DefinedBy = "AVP Sava",
+                Values = [new Threshold("REGULAR_DEF_ST", 300m, AlertLevel.Elevated)],
+            },
         };
 
         Assert.Equal(AlertLevel.Unknown, reading.Level);

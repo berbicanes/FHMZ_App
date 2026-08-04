@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Vodostaji.Core\Vodostaji.Core.csproj" />
+    <ProjectReference Include="..\..\src\Vodostaji.Ingest\Vodostaji.Ingest.csproj" />
   </ItemGroup>
 
 </Project>

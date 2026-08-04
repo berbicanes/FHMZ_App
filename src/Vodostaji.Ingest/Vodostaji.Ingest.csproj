@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Vodostaji.Ingest</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Vodostaji.Core/Vodostaji.Core.csproj" />
+  </ItemGroup>
+
+</Project>
