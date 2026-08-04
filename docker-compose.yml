@@ -1,0 +1,41 @@
+# Lokalno okruženje za razvoj. Ništa ovdje ne ide u produkciju bez izmjene lozinki.
+
+services:
+  postgres:
+    # PostGIS je u stacku zbog geometrije dionica i tačaka stanica (Faza 2).
+    image: postgis/postgis:16-3.4
+    container_name: vodostaji-postgres
+    environment:
+      POSTGRES_DB: vodostaji
+      POSTGRES_USER: vodostaji
+      POSTGRES_PASSWORD: vodostaji-local-dev
+      # Baza radi u UTC-u. Sve vrijeme u sistemu je UTC (CLAUDE.md → Konvencije),
+      # pa lokalna zona servera nema gdje da se umiješa.
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vodostaji -d vodostaji"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: vodostaji-redis
+    # Keš nikad ne smije biti agresivniji od osvježavanja izvora — to bi bila lažna
+    # svježina (CLAUDE.md → Šta NE raditi). TTL se postavlja u kodu, po izvoru.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

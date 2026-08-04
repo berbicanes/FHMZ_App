@@ -28,13 +28,17 @@ Ovo je aplikacija u kojoj netačan podatak može navesti nekoga na pogrešnu odl
 ## Komande
 
 ```bash
-docker compose up -d                  # Postgres + PostGIS + Redis
+docker compose up -d                  # Postgres + PostGIS + Redis — TRAŽE GA Data testovi
 dotnet build
-dotnet test
-dotnet test --filter Category=Ingest  # samo adapteri
+dotnet test                           # Data testovi padaju bez baze, i to namjerno
 dotnet run --project src/Vodostaji.Api
-dotnet ef migrations add <Name> -p src/Vodostaji.Data -s src/Vodostaji.Api
-dotnet run --project tools/Probe      # snimi fixtures sa izvora (Faza 0)
+
+# Migracije. Startup je zasad Data jer Api još ne postoji — kad dođe, prebaci na njega.
+dotnet ef migrations add <Name> -p src/Vodostaji.Data -s src/Vodostaji.Data
+dotnet ef database update -p src/Vodostaji.Data -s src/Vodostaji.Data
+
+dotnet run --project tools/Probe                        # snimi fixtures sa izvora
+dotnet run --project tools/Probe -- --watch 20 --cycles 72   # mjeri pomak vremenskih zona
 
 cd src/Vodostaji.Web
 npm run dev

@@ -1,10 +1,12 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Vodostaji.Core/Vodostaji.Core.csproj" />
+    <Project Path="src/Vodostaji.Data/Vodostaji.Data.csproj" />
     <Project Path="src/Vodostaji.Ingest/Vodostaji.Ingest.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Vodostaji.Core.Tests/Vodostaji.Core.Tests.csproj" />
+    <Project Path="tests/Vodostaji.Data.Tests/Vodostaji.Data.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Probe/Probe.csproj" />
