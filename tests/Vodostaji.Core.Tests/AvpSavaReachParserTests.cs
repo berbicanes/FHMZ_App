@@ -22,9 +22,8 @@ public class AvpSavaReachParserTests
 
     private static readonly SourceClock Clock = new()
     {
-        Convention = ClockConvention.Unverified,
-        PessimisticOffset = TimeSpan.FromHours(2),
-        Evidence = "test",
+        Convention = ClockConvention.Utc,
+        Evidence = "Dokazano 2026-08-04 upitom sa SQL literalom; vidi SOURCES.md §1.1.",
     };
 
     private static ParsedReaches ParseSample() =>
@@ -113,20 +112,18 @@ public class AvpSavaReachParserTests
     }
 
     [Fact]
-    public void Vrijeme_mjerenja_se_cita_pesimisticno_dok_zona_nije_dokazana()
+    public void Epoch_se_cita_kao_utc_jer_konverziju_radi_njihov_servis()
     {
         var parsed = ParseSample();
         var zenica = Assert.IsType<StationReading.Measured>(
             parsed.Readings.Single(r => r.Station.Name == "Bosna-Zenica"));
 
         var epoch = long.Parse(RawProperty("Bosna-Zenica", "DATE_TIME"), CultureInfo.InvariantCulture);
-        var naive = DateTimeOffset.FromUnixTimeMilliseconds(epoch);
 
-        // Neverifikovana zona čita vrijeme kao CEST, pa je stvarni trenutak dva sata **ranije**
-        // nego što bi naivno čitanje reklo. Greška u tom smjeru prikazuje podatak starijim
-        // nego što jeste; greška u suprotnom smjeru bi prekršila zlatno pravilo 2.
-        Assert.Equal(naive - TimeSpan.FromHours(2), zenica.MeasuredValue.MeasuredAt);
-        Assert.True(zenica.MeasuredValue.MeasuredAt < naive);
+        // Baza drži lokalno zidno vrijeme, ali servis ga konvertuje prije slanja — dokazano
+        // upitom u SOURCES.md §1.1. Epoch je dakle već UTC i ne pomjera se ni za sekundu.
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(epoch), zenica.MeasuredValue.MeasuredAt);
+        Assert.Equal(TimeSpan.Zero, zenica.MeasuredValue.MeasuredAt.Offset);
     }
 
     private static string RawProperty(string description, string property)

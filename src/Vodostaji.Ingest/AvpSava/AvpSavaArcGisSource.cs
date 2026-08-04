@@ -34,19 +34,22 @@ public sealed class AvpSavaArcGisSource(HttpClient httpClient, TimeProvider? tim
     };
 
     /// <summary>
-    /// Zona `DATE_TIME`-a **nije dokazana** (SOURCES.md → Otvorena pitanja). Do dokaza se
-    /// čita pesimistično, kao ljetno lokalno vrijeme, pa podatak ispada najstariji koji bi
-    /// mogao biti. Kad mjerenje iz `tests/fixtures/_watch/` da odgovor, mijenja se ovdje —
-    /// na jednom mjestu, sa novim dokazom u <see cref="SourceClock.Evidence"/>.
+    /// `DATE_TIME` je pravi UTC epoch — dokazano 2026-08-04, vidi <see cref="SourceClock.Evidence"/>.
+    ///
+    /// Ovo je ispravka ranije pretpostavke. Do dokaza se čitalo pesimistično kao CEST, što je
+    /// podatke prikazivalo dva sata starijim nego što jesu. Pesimizam je bio ispravan izbor
+    /// dok se nije znalo, ali nije zamjena za provjeru.
     /// </summary>
     public SourceClock Clock { get; } = new()
     {
-        Convention = ClockConvention.Unverified,
-        PessimisticOffset = TimeSpan.FromHours(2),
+        Convention = ClockConvention.Utc,
         Evidence =
-            "Neriješeno na dan 2026-08-04. Snimak u 22:25Z pokazuje najsvježiji timestamp "
-            + "21:00Z, bez ijedne vrijednosti u budućnosti, pa se UTC/CET/CEST ne razlikuju "
-            + "iz samog podatka. Čita se kao CEST jer to daje najstariji mogući trenutak.",
+            "Dokazano 2026-08-04. Sloj deklariše `dateFieldsTimeReference` = Central European "
+            + "Standard Time, `respectsDaylightSaving` = true, `datesInUnknownTimezone` = false. "
+            + "Provjereno upitom: `DATE_TIME = '2026-08-05 00:00:00'` vraća 28 zapisa, dok "
+            + "`= '2026-08-04 22:00:00'` vraća 0. Baza dakle drži lokalno zidno vrijeme, a "
+            + "servis vraća epoch 1785880800000 = 2026-08-04 22:00Z, što je tačno taj trenutak "
+            + "u UTC-u. Konverziju radi servis, pa je epoch već UTC i ne dira se.",
     };
 
     /// <summary>

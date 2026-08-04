@@ -15,7 +15,7 @@ ovoga — stvarnost pobjeđuje, popravi ovaj fajl u istom commitu.
 | Pretpostavka prije Faze 0 | Stvarnost |
 |---|---|
 | AVPJM je server-rendered HTML za AngleSharp | **Laravel + Vue SPA.** Podaci su JSON u Vue propu, lista stanica je prazna ljuštura |
-| AVP Sava `DATE_TIME` je nedvosmislen | Vremenska zona **nije riješena** — vidi Otvorena pitanja |
+| AVP Sava `DATE_TIME` je nedvosmislen | Zona **riješena**: servis vraća pravi UTC (§1.6) |
 | Registar stanica ima upotrebljiv `OBJECTID` | `objectIdField` je `null`; `outFields=*` ruši upit |
 | `Crowdsource_Flood_public` je izvor | Servis postoji u katalogu ali **nije pokrenut** |
 | RHMZ RS nema API | **Ima dva** — ali nijedan ne servira vodostaje; mapa koja bi ih dala je pokvarena |
@@ -46,7 +46,7 @@ Poligoni **dionica**, ne tačke stanica. **45 dionica ukupno**, jedan sloj.
 | `description` | String | npr. `Bosna-Zenica`, `Fojnička rijeka` |
 | `HYDRO_ID` | Double | veza na registar stanica (`HID_ID`) |
 | `H_CM` | **Single** | vodostaj u cm; **može biti negativan** (viđeno `-28.2`) |
-| `DATE_TIME` | Date | epoch ms; **zona neriješena** |
+| `DATE_TIME` | Date | epoch ms, **pravi UTC** — vidi §1.6 |
 | `STANDBY_STAT` | Integer | prag, cm |
 | `REGULAR_DEF_ST` | Integer | prag, cm |
 | `OUTSTANDING_ST` | Integer | prag, cm |
@@ -122,6 +122,46 @@ Za Fazu 2 to znači: apsolutne kote nisu moguće za 13 stanica.
 | `Upravljanje_rizicima_od_poplave___javno` | Feature + Map | radi, po 32 sloja (poplavne zone) |
 | `Crowdsource_Flood_public` | Feature + Map | **`ArcGIS 500: Service not started`** — ne postoji kao izvor |
 | `ServisneInformacije_javno`, `Vodna_knjiga_SA`, `RBM_Nitrati`, `VodniKatastri_Nitrati`, `RBM_EKO_Nitrati`, `MAPE_HAZARD_RISK/*`, `FGU_INSPIRE_Geoportal/*`, `PUBLIC/BIH_ISV_PubWebApp_VD_PP_PA` | | postoje, nisu relevantni |
+
+### 1.6 Vremenska zona — riješeno 2026-08-04
+
+**`DATE_TIME` je pravi UTC epoch. Ne pomjera se ni za sekundu.**
+
+Sloj to i deklariše u svojoj metadata:
+
+```json
+"dateFieldsTimeReference": {
+  "timeZone": "Central European Standard Time",
+  "timeZoneIANA": "Europe/Warsaw",
+  "respectsDaylightSaving": true
+},
+"datesInUnknownTimezone": false
+```
+
+Ali deklaracija govori u čemu je vrijeme **pohranjeno**, ne šta servis **vraća**. Razlika je
+bitna, jer mnogi ArcGIS servisi vraćaju lokalno zidno vrijeme zapakovano kao da je UTC — što
+je tačno ono što AVPJM radi (§2). Provjereno upitom:
+
+```
+DATE_TIME = '2026-08-04 22:00:00'   →  count 0
+DATE_TIME = '2026-08-05 00:00:00'   →  count 28
+```
+
+Epoch koji je servis vratio je `1785880800000`, što se naivno čita kao `2026-08-04 22:00Z`.
+Baza ga matchuje na `2026-08-05 00:00`, dakle drži **lokalno zidno vrijeme**. A `00:00 CEST`
+**jeste** `22:00Z`. Konverziju dakle radi njihov servis, ispravno, i epoch stiže već u UTC-u.
+
+**Ispravka ranije pretpostavke.** Do ovog dokaza se čitalo pesimistično kao CEST, što je
+podatke prikazivalo **dva sata starijim nego što jesu**. Pesimizam je bio ispravan izbor dok
+se nije znalo, ali nije zamjena za provjeru.
+
+**Kašnjenje objave je 85–115 minuta**, mjereno kroz `--watch`: mjerenje sa oznakom pune sate
+pojavi se oko sat i po kasnije. Kadenca je satna, pa `ExpectedInterval = 1h` stoji.
+
+`respectsDaylightSaving: true` znači da baza zimi drži CET a ljeti CEST — ali pošto servis
+konvertuje, adapter to ne mora znati. Zato je konvencija `Utc`, a ne `LocalWithDst`.
+
+---
 
 ### 1.5 Tehničko
 
@@ -343,16 +383,10 @@ Ne gradi na ovome dok pristup nije potvrđen, ali drži interfejs otvorenim.
 
 ## Otvorena pitanja
 
-1. **`DATE_TIME` u AVP Sava — koja zona?** Neriješeno. Snimak `2026-08-04 22:25Z` pokazuje
-   najsvježiji timestamp `21:00Z` (31 dionica) i `01:00Z` (3 dionice). Ako je UTC, kašnjenje
-   objave je ~85 minuta. Ako je lokalno zapisano kao UTC — kao kod AVPJM-a — stvarno kašnjenje
-   je 2h25m ili 3h25m. Vrijednosti padaju na tačne sate, a CET/CEST su cijeli sati, pa sam
-   podatak to ne razrješava.
-   **Kako riješiti:** (a) sonda svakih sat vremena kroz 24h — ako se ikad pojavi timestamp u
-   budućnosti, zona nije UTC; (b) cross-check sa FHMZBIH-om, koji objavljuje lokalno vrijeme
-   eksplicitno, na preklapajućoj stanici; (c) pitati `info@voda.ba` u Fazi 6.
-   **Do tada:** uzmi pesimističnu interpretaciju. Ako pogriješimo u smjeru "stariji nego što
-   jeste", prekršili smo estetiku. U drugom smjeru smo prekršili zlatno pravilo 2.
+1. ~~**`DATE_TIME` u AVP Sava — koja zona?**~~ **Riješeno 2026-08-04, vidi §1.6.**
+   Ni sonda ni cross-check nisu bili potrebni — odgovor je bio u metadata sloja i u jednom
+   upitu sa SQL literalom. Vrijedi zapamtiti redoslijed: **prvo pitaj izvor šta tvrdi o sebi,
+   pa tek onda mjeri.** Sonda je trošila 24 sata na pitanje koje je servis odgovarao odmah.
 
 2. **Veza `HYDRO_ID` ↔ `HID_ID`** je pretpostavljena iz imena polja, nije potvrđena spajanjem
    45 dionica sa 102 stanice. Uradi prije Faze 2.

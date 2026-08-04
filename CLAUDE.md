@@ -2,10 +2,10 @@
 
 Jedna mapa sa stanjem svih rijeka u BiH, u realnom vremenu, besplatno. Danas su podaci razbijeni na četiri agencije i tri sajta; korisnik ne treba znati ništa o slivovima ni entitetima.
 
-**Trenutno stanje: `FAZA 0 ZAVRŠENA 2026-08-04 — svi izvori verifikovani. Faza 1 nije počela.`**
-`tools/Probe` radi, fixtures su u `tests/fixtures/`, `docs/SOURCES.md` je regenerisan iz stvarnih
-odgovora sva četiri izvora. Otvoreno u Fazu 1: vremenska zona `DATE_TIME`-a kod AVP Save
-(mjerenje traje, `tests/fixtures/_watch/watch.csv`) i veza `HYDRO_ID` ↔ `HID_ID`.
+**Trenutno stanje: `FAZA 1 ZAVRŠENA 2026-08-05 — vertikalni presjek na AVP Savi radi.`**
+Core, Ingest, Data, Api i Web stoje; 47 testova prolazi. Ingest se vrti na 5 min sa osiguračem,
+mapa se servira kao statički GeoJSON, disclaimer i atribucija su na mjestu. Zona `DATE_TIME`-a
+je **riješena** (SOURCES.md §1.6). Otvoreno u Fazu 2: veza `HYDRO_ID` ↔ `HID_ID`.
 Ažuriraj ovu liniju pri svakom prelasku faze. Ako opis ispod ne odgovara stvarnom kodu — stvarnost pobjeđuje, popravi fajl u istom commitu.
 
 ---

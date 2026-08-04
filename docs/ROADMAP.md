@@ -25,22 +25,25 @@ Verifikacija stvarnosti prije ijedne linije adaptera.
 
 ---
 
-## Faza 1 — Vertikalni presjek ⬅️ **TRENUTNA**
+## Faza 1 — Vertikalni presjek ✅ **ZAVRŠENA 2026-08-05**
 
 Samo AVP Sava. Cilj je funkcionalna mapa sjeverne BiH od kraja do kraja.
 
-- [ ] Solution, docker compose (Postgres + PostGIS + Redis), migracije
-- [ ] `IStationDataSource` + `AvpSavaArcGisSource`
-- [ ] Ingest job na 15 min, sa circuit breakerom i validacijom
-- [ ] `/api/v1/geojson/reaches` kao statički fajl koji job prepisuje
-- [ ] MapLibre mapa sa zvaničnim bojama iz renderera
-- [ ] Disclaimer traka i atribucija
-- [ ] Fixture testovi adaptera + test vremenskih zona sa DST prelazom
-- [ ] Test da `Unknown` ne može postati `Normal`
+- [x] Solution, docker compose (Postgres + PostGIS + Redis), migracije
+- [x] `IStationDataSource` + `AvpSavaArcGisSource`
+- [x] Ingest job na 15 min, sa circuit breakerom i validacijom
+- [x] `/api/v1/geojson/reaches` kao statički fajl koji job prepisuje
+- [x] MapLibre mapa sa zvaničnim bojama iz renderera
+- [x] Disclaimer traka i atribucija
+- [x] Fixture testovi adaptera + test vremenskih zona sa DST prelazom
+- [x] Test da `Unknown` ne može postati `Normal`
+
+**Riješeno usput:** zona `DATE_TIME`-a kod AVP Save (SOURCES.md §1.6). Odgovor je bio u
+metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor šta tvrdi o sebi.**
 
 ---
 
-## Faza 2 — Stanice i historija
+## Faza 2 — Stanice i historija ⬅️ **TRENUTNA**
 
 - [ ] Registar stanica iz `ISV_BIH_2009_javnakarta/MapServer/1`
 - [ ] Tačke stanica kao zaseban sloj
