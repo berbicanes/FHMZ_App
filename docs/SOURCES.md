@@ -1,48 +1,61 @@
 # SOURCES.md — specifikacije izvora
 
-> ⚠️ **STATUS: NEVERIFIKOVANO.** Sve ispod je prikupljeno ručno i može biti netačno ili zastarjelo.
-> Faza 0 zamjenjuje ovaj fajl generisanim sadržajem iz stvarnih odgovora servera.
-> Do tada: **ne piši adaptere protiv ove dokumentacije.**
+> ✅ **STATUS: VERIFIKOVANO 2026-08-04** (UTC) — `tools/Probe`, 209 zahtjeva, 200 uspješnih.
+> Sve ispod je izvedeno iz stvarnih odgovora servera, snimljenih u `tests/fixtures/`.
+> Izvještaj sonde: `tests/fixtures/_report/schema-2026-08-04.md`.
+> Izuzetak je **§4 (RHMZ RS)**, koji ostaje neverifikovan — vidi tamo zašto.
 
-## FAZA 0 — obavezno prije bilo kakvog koda
+Ponovna verifikacija: `dotnet run --project tools/Probe`. Fixtures nose datum u imenu, pa
+stari ostaju kao dokaz kako je shema izgledala ranije. Ako se stvarna shema razlikuje od
+ovoga — stvarnost pobjeđuje, popravi ovaj fajl u istom commitu.
 
-1. Napravi `tools/Probe` — konzolna aplikacija
-2. Pozovi `?f=json` na svakom navedenom ArcGIS servisu i sloju
-3. Za HTML izvore: snimi po jednu reprezentativnu stranicu
-4. Snimi pune odgovore u `tests/fixtures/<source>/<layer>-YYYY-MM-DD.json`
-5. Regeneriši ovaj fajl sa **stvarnim** poljima, tipovima, domenima i renderer bojama
-6. Ukloni upozorenje na vrhu i upiši datum verifikacije
+---
 
-Ako se stvarna shema razlikuje od ovoga — stvarnost pobjeđuje.
+## Šta je verifikacija promijenila
+
+| Pretpostavka prije Faze 0 | Stvarnost |
+|---|---|
+| AVPJM je server-rendered HTML za AngleSharp | **Laravel + Vue SPA.** Podaci su JSON u Vue propu, lista stanica je prazna ljuštura |
+| AVP Sava `DATE_TIME` je nedvosmislen | Vremenska zona **nije riješena** — vidi Otvorena pitanja |
+| Registar stanica ima upotrebljiv `OBJECTID` | `objectIdField` je `null`; `outFields=*` ruši upit |
+| `Crowdsource_Flood_public` je izvor | Servis postoji u katalogu ali **nije pokrenut** |
+| Polja i boje sloja realnog vremena | **Potvrđeno tačno**, 1:1 sa dokumentacijom |
 
 ---
 
 ## 1. AVP Sava — `avp-sava` — PRIORITET 1
 
 **Baza:** `https://isvportal.voda.ba/server/rest/services`
-ArcGIS Server 11.5, javno, bez autentikacije.
+ArcGIS Server **11.5** (potvrđeno), javno, bez autentikacije.
 
-| Servis | Sadržaj |
-|---|---|
-| `Hidrolosko_stane_u_realnom_vremenu/FeatureServer/0` | realno vrijeme — **poligoni dionica** |
-| `Prognoza_hidrološkog_stanja_javno/FeatureServer` | prognoza |
-| `ISV_BIH_2009_javnakarta/MapServer/1` | registar hidroloških stanica (tačke) |
-| `ISV_BIH_2009_javnakarta/MapServer` tabele 50, 98 | `MON_HIDRO`, `MON_HID` — mjerenja |
-| `Upravljanje_rizicima_od_poplave___javno` | poplavne zone |
-| `Crowdsource_Flood_public` | prijave građana |
+Katalog vraća **26 servisa**. Šest foldera traži token i nedostupno je:
+`GP`, `Hosted`, `OGC_WEB_services`, `ProMigracija`, `SavskaKomisija`, `UNDP`.
 
-**Primjer upita:**
+> `SavskaKomisija` je zaključan folder na javnom portalu — vidi §5 i `LEGAL.md`.
 
-```
-GET https://isvportal.voda.ba/server/rest/services/
-    Hidrolosko_stane_u_realnom_vremenu/FeatureServer/0/query
-    ?where=1%3D1&outFields=*&outSR=4326&f=geojson
-```
+### 1.1 Realno vrijeme — `Hidrolosko_stane_u_realnom_vremenu/FeatureServer/0`
 
-**Očekivana polja sloja 0 (neverifikovano):**
-`HYDRO_ID`, `H_CM`, `DATE_TIME`, `STANDBY_STAT`, `REGULAR_DEF_ST`, `OUTSTANDING_ST`, `EMERGENCY_ST`, `CURRENT_STATUS`
+Poligoni **dionica**, ne tačke stanica. **45 dionica ukupno**, jedan sloj.
+`maxRecordCount` 2000 — paginacija u praksi nije potrebna, ali kod je svejedno mora podržati.
 
-**Zvanične boje iz renderera** — koristi ove, ne izmišljaj svoje:
+| Polje | Tip | Napomena |
+|---|---|---|
+| `OBJECTID` | OID | |
+| `SEC_ID` | Double | id dionice |
+| `description` | String | npr. `Bosna-Zenica`, `Fojnička rijeka` |
+| `HYDRO_ID` | Double | veza na registar stanica (`HID_ID`) |
+| `H_CM` | **Single** | vodostaj u cm; **može biti negativan** (viđeno `-28.2`) |
+| `DATE_TIME` | Date | epoch ms; **zona neriješena** |
+| `STANDBY_STAT` | Integer | prag, cm |
+| `REGULAR_DEF_ST` | Integer | prag, cm |
+| `OUTSTANDING_ST` | Integer | prag, cm |
+| `EMERGENCY_ST` | Integer | prag, cm |
+| `Shape__Area`, `Shape__Length` | Double | |
+
+`H_CM` je `esriFieldTypeSingle` — stiže sa artefaktima jednostruke preciznosti (`17.6000004`).
+Parsiraj iz sirovog JSON teksta u `decimal`, nikad preko `double`.
+
+**Zvanične boje iz renderera** (`uniqueValue` nad `CURRENT_STATUS`) — potvrđene, koristi ove:
 
 | `CURRENT_STATUS` | Label | Hex | `AlertLevel` |
 |---|---|---|---|
@@ -52,43 +65,180 @@ GET https://isvportal.voda.ba/server/rest/services/
 | Emergency | Značajne poplave | `#E60000` | Emergency |
 | No Data | Nema podataka | `#CCCCCC` | Unknown |
 
-**Tehničko:**
+**Stanje 2026-08-04 22:25Z:** 33 dionice `Standby`, **12 `No Data`**, 11 sa `DATE_TIME = null`.
+Četvrtina mreže bez podatka nije rub slučaj nego normalno stanje — UI mora izgledati dobro sa
+12 sivih dionica, ne tretirati to kao grešku.
+
+Pragovi su rastući i **dati po dionici** (npr. Bosna-Zenica `124/154/344/394`). Status dolazi
+gotov u `CURRENT_STATUS`. Zlatno pravilo 3 stoji: ne izvodi status iz `H_CM` i pragova sam.
+
+**Primjer upita:**
+
+```
+GET https://isvportal.voda.ba/server/rest/services/
+    Hidrolosko_stane_u_realnom_vremenu/FeatureServer/0/query
+    ?where=1%3D1&outFields=*&outSR=4326&f=geojson
+```
+
+### 1.2 Registar stanica — `ISV_BIH_2009_javnakarta/MapServer/1`
+
+Naziv sloja: *Hidrološke stanice*. Tačke. **102 stanice.**
+Servis ima ukupno 109 slojeva; nas zanima sloj 1 i tabele 50 i 98.
+
+Polja: `HID_ID`, `shape`, `OBJECTID`, `NAZIV`, `LOKACIJA`, `x`, `y`,
+`TIP_HIDROLOŠKE_STANICE`, `KOTA_0`, `BR_V_LETVI`.
+
+**Tri zamke, sve potvrđene:**
+
+1. **`outFields=*` ruši upit** (`ArcGIS 400: Failed to execute query`). Uzrok je `OBJECTID`:
+   sloj ga prijavljuje u shemi, ali `objectIdField` je `null` i upit nad njim puca. Traži polja
+   poimence, bez `OBJECTID`. `tools/Probe` to radi automatski kad `*` bude odbijen.
+2. **`x` i `y` atributi nisu upotrebljivi.** To je Gauss-Krüger (MGI/Balkans), ali u
+   **miješanim zonama** — 89 stanica u zoni 6, 8 u zoni 5 — a kod **3 stanice su ose zamijenjene**
+   (`Krušnica ušće`, `HS Orašje`, `HS Kreševka - Kiseljak`). Koristi geometriju koju server vrati
+   uz `outSR=4326`; ona je ispravna za svih 101 stanicu koja geometriju ima.
+3. **Nepotpunost:** 1 stanica bez geometrije i bez `HID_ID`, **13 stanica bez `KOTA_0`**.
+
+`HID_ID` je unikatan (102/102) i `NAZIV` je unikatan — `HID_ID` je ključ, `NAZIV` rezerva.
+Tipovi: 99 `Automatska stanica`, 3 `Vodomjerna letva`.
+Geografski opseg: lon 15.783–18.974, lat 43.582–45.180.
+
+### 1.3 Mjerenja — `ISV_BIH_2009_javnakarta/MapServer` tabele 50 i 98
+
+- **50 (`MON_HIDRO`)** — registarski zapis stanice: `HIDRO_ID`, `EU_CD` (npr. `BA5010`),
+  `NAZIV` (`HS Goražde`), `LOKACIJA`, `X`, `Y`, `Z`, `POV_SLIVA`, `DAT_AZUR`, `NADLEZNOST`.
+- **98 (`MON_HID`)** — `HID_ID`, `HIDRO_ID`, `ORG_OZN`, `ORIG_BR`, `TIP_HID_PO`,
+  **`KOTA_0`** (kota nule letve, npr. `150.22`), `BR_V_LETVI`, `STAC_KM`.
+
+`KOTA_0` je nula vodomjerne letve — bez nje se `H_CM` ne može prevesti u apsolutnu kotu.
+Za Fazu 2 to znači: apsolutne kote nisu moguće za 13 stanica.
+
+### 1.4 Ostali servisi u katalogu
+
+| Servis | Tipovi | Stanje |
+|---|---|---|
+| `Prognoza_hidrološkog_stanja_javno` | Feature + Map | radi, po 2 sloja, `RBM_FRM.DBO.PrognozaPoplave`, poligoni — **van dometa** |
+| `Upravljanje_rizicima_od_poplave___javno` | Feature + Map | radi, po 32 sloja (poplavne zone) |
+| `Crowdsource_Flood_public` | Feature + Map | **`ArcGIS 500: Service not started`** — ne postoji kao izvor |
+| `ServisneInformacije_javno`, `Vodna_knjiga_SA`, `RBM_Nitrati`, `VodniKatastri_Nitrati`, `RBM_EKO_Nitrati`, `MAPE_HAZARD_RISK/*`, `FGU_INSPIRE_Geoportal/*`, `PUBLIC/BIH_ISV_PubWebApp_VD_PP_PA` | | postoje, nisu relevantni |
+
+### 1.5 Tehničko
+
 - Nativni CRS je EPSG:3857 → **uvijek** `outSR=4326`
-- `MaxRecordCount` 2000 → paginacija preko `resultOffset` / `resultRecordCount`
+- `f=geojson` radi na FeatureServer sloju; **MapServer slojevi prijavljuju `geoJSON` u
+  `supportedQueryFormats` ali ga ne serviraju uvijek** — čitaj `supportedQueryFormats` i budi
+  spreman pasti na `f=json`
 - Podržava `orderByFields` i statističke upite — koristi za historiju umjesto punog povlačenja
-- `f=geojson` preferirano nad `f=json`
+- **ArcGIS greške stižu sa HTTP 200** i omotačem `{"error":{...}}`. Adapter koji gleda samo
+  statusni kod vidi uspjeh gdje ga nema. Uvijek pregledaj tijelo.
 
 ---
 
 ## 2. AVP Jadranskog mora — `avpjm` — PRIORITET 2
 
 - Lista: `https://avpjm.jadran.ba/vodomjerne_stanice`
-- Detalj: `https://avpjm.jadran.ba/vodomjerne_stanice/{id}` (`/1` = Hidrološka postaja Mostar)
-- Pokriva: Neretva, Trebišnjica, Cetina, Krka
+- Detalj: `https://avpjm.jadran.ba/vodomjerne_stanice/{id}` (`/1` = Mostar, Neretva)
 - Kontakt: `jsliv@jadran.ba`
 
-Server-rendered HTML → **AngleSharp**, nikad regex.
+**Ovo nije server-rendered HTML.** Stack je Laravel + Vue (Vuetify). Stranica liste ne sadrži
+nijednu tabelu, nijedan link na stanicu, nijedno pojavljivanje riječi "stanic" — sve se crta
+u browseru. **Scraper nad listom ne može raditi.**
 
-Njihov ISV (`isvportal.jadran.ba`) je isti Esri stack kao Sarajevo, ali sa pristupom reguliranim korisničkim pravima. **Ako dobijemo pristup, ovaj adapter se prepisuje na ArcGIS i scraper se briše** — piši ga tako da to bude trivijalno: interfejs isti, implementacija zamjenjiva.
+Stranica detalja jeste server-rendered i **nosi cijeli podatak u Vue propovima**:
+
+- `<station-map :station="…">` i `<station-data-table :data="…">` — JSON objekat stanice
+- `<station-chart :readings="…">` — puna serija kao `epoch<TAB>vrijednost` po liniji
+
+Za `/1` (Mostar): **2976 očitanja, korak 15 minuta, 31 dan historije.** To je znatno bogatije
+od AVP Save i dolazi u jednom zahtjevu.
+
+**Polja objekta stanice** (potvrđeno na `/1`):
+
+| Polje | Primjer | Značenje |
+|---|---|---|
+| `id`, `title`, `filename` | `1`, `Mostar`, `mostar` | ključ i naziv |
+| `vodotok`, `dionica`, `poplavno_podrucje` | `Neretva`, `Od HE Mostar do željezničkog mosta u Čapljini` | |
+| `location` | `43.34835,17.8105` | **`lat,lon` WGS84 kao string** |
+| `unit`, `kota` | `cm`, `40.29` | jedinica i kota nule |
+| `val`, `valtime` | `244`, `1785885300` | zadnje očitanje (epoch **sekunde**) |
+| `prevval`, `prevvaltime` | `251`, `1785884400` | prethodno |
+| `redovna_obrana`, `vanredna_obrana`, `kontinuirana_obrana` | `null`, `null`, `850` | **pragovi agencije** |
+| `max1`…`max4`, `max4date` | `850`, `1525`, `1999-12-16` | historijski maksimumi |
+| `status`, `fop`, `color`, `pos` | `1`, `0`, `#93aae0`, `40` | |
+| `owner` | `AVP Jadransko more Mostar (zimsko računanje vremena)` | **vidi ispod** |
+| `start_date` | `1923` | početak osmatranja |
+
+**Vremenska zona — riješeno i dokazano.** Timestampovi su epoch sekunde, ali predstavljaju
+**lokalno zimsko vrijeme (CET, UTC+1), zapisano kao da je UTC**. Dokaz iz snimka:
+
+- zadnje očitanje nosi `1785885300` = `2026-08-04 23:15Z` ako se čita kao UTC
+- snimak je uzet u `22:33Z` — čitano kao UTC, podatak je **42 minute u budućnosti**
+- kao CET ispada `22:15Z`, tj. 18 minuta prije dohvata, uz korak od 15 minuta ✓
+- polje `owner` to i piše: *"zimsko računanje vremena"*
+
+Dakle: **oduzmi tačno 1 sat, cijele godine, bez obzira na ljetno vrijeme.** Naivno čitanje kao
+UTC ljeti prikazuje podatak sat vremena svježijim nego što jeste i povremeno u budućnosti — što
+direktno krši zlatno pravilo 2. Test DST prelaza za ovaj adapter mora dokazati da offset
+**ostaje** +1 i u martu i u oktobru.
+
+Pragovi mogu biti `null` (za Mostar su `redovna_obrana` i `vanredna_obrana` prazni). Prazan prag
+je `Unknown`, ne `Normal`.
+
+**Implementacija:** izvlačenje JSON-a iz Vue propa, uz `AngleSharp` za dohvat atributa i
+`System.Text.Json` za parsiranje. Vrijednost propa je HTML-escapovana i sama je JSON string —
+mora se dvostruko odmotati.
+
+Njihov ISV (`isvportal.jadran.ba`) je isti Esri stack kao Sarajevo, sa pristupom reguliranim
+korisničkim pravima. **Ako dobijemo pristup, ovaj adapter se prepisuje na ArcGIS i scraper se
+briše** — piši ga tako da to bude trivijalno: interfejs isti, implementacija zamjenjiva.
 
 ---
 
 ## 3. FHMZBIH — `fhmzbih` — PRIORITET 3
 
-- `https://www.fhmzbih.gov.ba/latinica/HIDRO/`
+- `https://www.fhmzbih.gov.ba/latinica/HIDRO/` — UTF-8, klasičan server-rendered HTML
 - `https://fop.fhmzbih.gov.ba` — pragovi obavještavanja
 
-Stanice: Bihać, Martin Brod, Sanski Most, Vrhpolje, Sarajevo, Reljevo, Zenica, Kiseljak, Han Bila, Tuzla, Kašići, Konjic.
+Stranica nosi **jednu tabelu sa 12 stanica** i legendu sa tri kategorije. Kolone:
 
-Uloga: cross-check za sliv Save i pokrivač rupa. Dnevna frekvencija.
+`Vodotok · Vodomjerna stanica · Datum · Vrijeme · Aktuelni vodostaj (cm) · Trend · Kontinuirano obavještavanje stanovništva i CZ`
+
+Primjer reda: `Una · Bihać · 4.8.2026 · 08:00 · 22 · · 100`
+
+**Statusni rječnik agencije** (iz legende — sačuvaj doslovno u `StatusLabelOriginal`):
+
+| Tekst | `AlertLevel` |
+|---|---|
+| Nema potrebe za obavještavanjem. | Normal |
+| Vodostaj dosegao nivo kontinuiranog obavještavanja stanovništva i CZ | Elevated |
+| Nema podataka o vodostaju | **Unknown** |
+
+Stanice, sa vlastitim podstranicama (`hvsBihac.php` … 12 komada): Bihać, Martin Brod,
+Sanski Most (`hvsSMost`), Vrhpolje, Sarajevo (`hvsCumurija`), Reljevo, Zenica, Kiseljak,
+Han Bila (`hvsHBila`), Tuzla, Kašići, Konjic.
+
+**Vrijeme je eksplicitno lokalno** (`4.8.2026 08:00`), u formatu `d.M.yyyy` + `HH:mm` — nema
+epocha, nema zone. Parsiraj kao `Europe/Sarajevo` i pretvori u UTC.
+
+**Frekvencija nije dnevna kako se pretpostavljalo.** U snimku Bihać nosi `4.8. 08:00`, a
+Martin Brod `5.8. 00:00` — razlika od 16 sati unutar iste tabele. `ExpectedInterval` mora biti
+po stanici, ne po izvoru.
+
+Uloga: cross-check za sliv Save i pokrivač rupa. Zato što objavljuje **lokalno vrijeme
+eksplicitno**, ovo je i alat za rješavanje otvorenog pitanja oko `DATE_TIME` u §1.
 
 ---
 
 ## 4. RHMZ RS + Vode Srpske — `rhmz-rs` — PRIORITET 4, NAJTEŽE
 
-RHMZ RS osmatra vodostaje na hidrološkim stanicama u RS i objavljuje redovne i vanredne hidrološke biltene. **Nema API-ja.** Realno: HTML ili PDF parsiranje.
+> ⚠️ **NEVERIFIKOVANO.** Ovaj izvor **nije sondiran u Fazi 0** jer u dokumentaciji nije bilo
+> nijednog URL-a, a Faza 0 ne izmišlja adrese. Prije Faze 4 mora se uraditi zaseban probe.
 
-Očekuj najviše lomljenja. Piši defanzivno, sa velikim brojem fixture testova, i tretiraj neuspjeh parsiranja kao **normalno stanje** koje se logira — ne kao izuzetak koji ruši job.
+RHMZ RS osmatra vodostaje na hidrološkim stanicama u RS i objavljuje redovne i vanredne
+hidrološke biltene. Nema poznatog API-ja. Realno: HTML ili PDF parsiranje.
+
+Očekuj najviše lomljenja. Piši defanzivno, sa velikim brojem fixture testova, i tretiraj
+neuspjeh parsiranja kao **normalno stanje** koje se logira — ne kao izuzetak koji ruši job.
 
 Ovo je izvor gdje direktan kontakt sa institucijom donosi najviše. Vidi `LEGAL.md`.
 
@@ -96,13 +246,36 @@ Ovo je izvor gdje direktan kontakt sa institucijom donosi najviše. Vidi `LEGAL.
 
 ## 5. Sava FFWS / Sava HIS — istražiti, ne graditi
 
-Sava FFWS integriše data hub za osmotrene podatke (Sava HIS) preko šest zemalja. Za BiH su operativno uključeni FHMZBIH, RHMZ RS i JU "Vode Srpske" — **jedino mjesto gdje su oba entiteta već spojena.**
+Sava FFWS integriše data hub za osmotrene podatke (Sava HIS) preko šest zemalja. Za BiH su
+operativno uključeni FHMZBIH, RHMZ RS i JU "Vode Srpske" — **jedino mjesto gdje su oba entiteta
+već spojena.** Pokriva samo sliv Save (nema Neretve). Pristup institucionalni, preko ISRBC.
 
-Pokriva samo sliv Save (nema Neretve). Pristup institucionalni, preko ISRBC.
-
-Postoji presedan: regionalni servis `vodostaj.rs` navodi FFWS kao svoj izvor za BiH.
+**Novo iz Faze 0:** na `isvportal.voda.ba` postoji folder **`SavskaKomisija`** koji vraća
+`ArcGIS 499: Token Required`. Servis dakle postoji na infrastrukturi AVP Save i zaključan je
+pravima, a ne odsustvom. To je konkretan argument za Fazu 6 — ne tražiš da nešto naprave, nego
+pristup nečemu što već stoji.
 
 Ne gradi na ovome dok pristup nije potvrđen, ali drži interfejs otvorenim.
+
+---
+
+## Otvorena pitanja
+
+1. **`DATE_TIME` u AVP Sava — koja zona?** Neriješeno. Snimak `2026-08-04 22:25Z` pokazuje
+   najsvježiji timestamp `21:00Z` (31 dionica) i `01:00Z` (3 dionice). Ako je UTC, kašnjenje
+   objave je ~85 minuta. Ako je lokalno zapisano kao UTC — kao kod AVPJM-a — stvarno kašnjenje
+   je 2h25m ili 3h25m. Vrijednosti padaju na tačne sate, a CET/CEST su cijeli sati, pa sam
+   podatak to ne razrješava.
+   **Kako riješiti:** (a) sonda svakih sat vremena kroz 24h — ako se ikad pojavi timestamp u
+   budućnosti, zona nije UTC; (b) cross-check sa FHMZBIH-om, koji objavljuje lokalno vrijeme
+   eksplicitno, na preklapajućoj stanici; (c) pitati `info@voda.ba` u Fazi 6.
+   **Do tada:** uzmi pesimističnu interpretaciju. Ako pogriješimo u smjeru "stariji nego što
+   jeste", prekršili smo estetiku. U drugom smjeru smo prekršili zlatno pravilo 2.
+
+2. **Veza `HYDRO_ID` ↔ `HID_ID`** je pretpostavljena iz imena polja, nije potvrđena spajanjem
+   45 dionica sa 102 stanice. Uradi prije Faze 2.
+
+3. **Brčko** — nije istraženo, nema poznat izvor.
 
 ---
 
@@ -116,5 +289,6 @@ Ne gradi na ovome dok pristup nije potvrđen, ali drži interfejs otvorenim.
 - [ ] Atribucija: `AgencyName` + `AgencyUrl` popunjeni
 - [ ] Neuspjeh parsiranja logira i preskače stanicu, ne ruši cijeli run
 - [ ] Nepoznat ili neparsiran status → `AlertLevel.Unknown`, nikad `Normal`
-- [ ] Rate limit ≥ 10 min, `User-Agent` sa kontaktom
+- [ ] **Tijelo odgovora pregledano na grešku, ne samo HTTP status**
+- [ ] Rate limit ≥ 10 min, `User-Agent` sa kontaktom (`tools/Probe/Contact.cs`)
 - [ ] Upisan u `/api/v1/sources`

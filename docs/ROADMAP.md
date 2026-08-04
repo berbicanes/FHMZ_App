@@ -8,14 +8,20 @@ Faza nije gotova dok svi izlazni kriteriji nisu ispunjeni. Pri prelasku faze až
 
 Verifikacija stvarnosti prije ijedne linije adaptera.
 
-- [ ] `tools/Probe` konzolna aplikacija
-- [ ] `?f=json` pozvan na svim ArcGIS servisima i slojevima iz `SOURCES.md`
-- [ ] Reprezentativna stranica snimljena za svaki HTML izvor
-- [ ] Fixtures u `tests/fixtures/<source>/<layer>-YYYY-MM-DD.json`
-- [ ] `SOURCES.md` regenerisan sa stvarnim poljima, tipovima, domenima, renderer bojama
-- [ ] Upozorenje "NEVERIFIKOVANO" uklonjeno, datum verifikacije upisan
+- [x] `tools/Probe` konzolna aplikacija
+- [x] `?f=json` pozvan na svim ArcGIS servisima i slojevima iz `SOURCES.md` — 26 servisa,
+      6 foldera vraća `Token Required`, `Crowdsource_Flood_public` nije pokrenut
+- [x] Reprezentativna stranica snimljena za AVPJM i FHMZBIH
+- [ ] **RHMZ RS nije sondiran** — u `SOURCES.md` nije bilo nijednog URL-a. Nađi adrese,
+      pa pokreni sondu. Ovo je jedina stvar koja drži Fazu 0 otvorenom.
+- [x] Fixtures u `tests/fixtures/<source>/<layer>-YYYY-MM-DD.json` (209 zahtjeva, 200 uspješnih)
+- [x] `SOURCES.md` regenerisan sa stvarnim poljima, tipovima, domenima, renderer bojama
+- [x] Upozorenje "NEVERIFIKOVANO" uklonjeno, datum verifikacije upisan (osim §4)
 
 **Ne piši adaptere u ovoj fazi.**
+
+**Nose se u Fazu 1:** zona `DATE_TIME`-a kod AVP Save nije riješena, a veza
+`HYDRO_ID` ↔ `HID_ID` nije potvrđena. Oboje je opisano u `SOURCES.md` → Otvorena pitanja.
 
 ---
 

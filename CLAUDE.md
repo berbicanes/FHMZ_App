@@ -2,7 +2,9 @@
 
 Jedna mapa sa stanjem svih rijeka u BiH, u realnom vremenu, besplatno. Danas su podaci razbijeni na četiri agencije i tri sajta; korisnik ne treba znati ništa o slivovima ni entitetima.
 
-**Trenutno stanje: `FAZA 0 — prazan repo, ništa nije implementirano.`**
+**Trenutno stanje: `FAZA 0 — sonda napisana, izvori verifikovani 2026-08-04, osim RHMZ RS.`**
+`tools/Probe` radi, fixtures su u `tests/fixtures/`, `docs/SOURCES.md` je regenerisan iz stvarnih
+odgovora. Preostaje RHMZ RS, za koji nije bilo URL-a. Adapteri se i dalje ne pišu.
 Ažuriraj ovu liniju pri svakom prelasku faze. Ako opis ispod ne odgovara stvarnom kodu — stvarnost pobjeđuje, popravi fajl u istom commitu.
 
 ---
