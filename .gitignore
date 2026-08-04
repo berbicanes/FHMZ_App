@@ -38,3 +38,6 @@ tests/fixtures/_watch/*.html
 .vs/
 .idea/
 *.swp
+
+# Log watch moda se prepisuje stalno; artefakt je watch.csv.
+tests/fixtures/_watch/watch.log
