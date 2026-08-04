@@ -1,0 +1,36 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+artifacts/
+[Dd]ebug/
+[Rr]elease/
+TestResults/
+*.coverage
+*.trx
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# Secrets and local config
+appsettings.Development.json
+appsettings.Local.json
+.env
+.env.local
+*.pfx
+
+# macOS
+.DS_Store
+
+# Editors
+.vs/
+.idea/
+*.swp
