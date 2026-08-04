@@ -27,6 +27,10 @@ appsettings.Local.json
 .env.local
 *.pfx
 
+# Watch mod prepisuje sirove snimke svaki ciklus — artefakt je watch.csv, ne oni.
+tests/fixtures/_watch/*.json
+tests/fixtures/_watch/*.html
+
 # macOS
 .DS_Store
 

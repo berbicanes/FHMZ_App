@@ -11,4 +11,8 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AngleSharp" Version="1.7.0" />
+  </ItemGroup>
+
 </Project>

@@ -27,6 +27,56 @@ Console.WriteLine();
 using var client = new ProbeClient(options.FixtureRoot, options.Delay, runStamp);
 var crawler = new ArcGisCrawler(client, ProbeTargets.ArcGisSourceId, ProbeTargets.ArcGisRoot);
 
+if (options.WatchInterval is { } interval)
+{
+    var watcher = new Watcher(client, options.FixtureRoot);
+    var csv = Path.Combine(options.FixtureRoot, "_watch", "watch.csv");
+
+    Console.WriteLine($"Watch mod — ciklus svakih {interval.TotalMinutes:N0} min, {options.WatchCycles} ciklusa");
+    Console.WriteLine($"CSV: {csv}");
+    Console.WriteLine("Mjeri se pomak između vremena koje izvor tvrdi i stvarnog vremena.");
+    Console.WriteLine();
+
+    for (var cycle = 1; cycle <= options.WatchCycles && !cts.IsCancellationRequested; cycle++)
+    {
+        var now = DateTimeOffset.UtcNow;
+        Console.WriteLine($"── ciklus {cycle}/{options.WatchCycles} · {now:yyyy-MM-dd HH:mm}Z ──");
+
+        try
+        {
+            var count = await watcher.RunCycleAsync(now, cts.Token);
+            Console.WriteLine($"   {count} očitanja upisano");
+        }
+        catch (OperationCanceledException)
+        {
+            break;
+        }
+        catch (Exception ex)
+        {
+            // Pad jednog ciklusa ne smije prekinuti mjerenje koje traje 24 sata.
+            Console.WriteLine($"   ciklus pao: {ex.Message}");
+        }
+
+        if (cycle == options.WatchCycles)
+        {
+            break;
+        }
+
+        try
+        {
+            await Task.Delay(interval, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            break;
+        }
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Gotovo. Analiziraj: {csv}");
+    return 0;
+}
+
 try
 {
     if (options.Includes(ProbeTargets.ArcGisSourceId))
@@ -80,8 +130,17 @@ namespace Vodostaji.Probe
         TimeSpan Delay,
         bool DrillAll,
         bool SampleAll,
-        IReadOnlyList<string> Only)
+        IReadOnlyList<string> Only,
+        TimeSpan? WatchInterval,
+        int WatchCycles)
     {
+        /// <summary>
+        /// LEGAL.md §2.5 i SOURCES.md obećavaju izvorima najmanje 10 minuta između pogodaka.
+        /// Obećanje koje alat može prekršiti nije obećanje, pa ga alat odbija prekršiti.
+        /// </summary>
+        public static readonly TimeSpan MinWatchInterval = TimeSpan.FromMinutes(10);
+
+
         public bool Includes(string sourceId) =>
             Only.Count == 0 || Only.Contains(sourceId, StringComparer.OrdinalIgnoreCase);
 
@@ -92,6 +151,8 @@ namespace Vodostaji.Probe
             var drillAll = false;
             var sampleAll = false;
             var only = new List<string>();
+            TimeSpan? watchInterval = null;
+            var watchCycles = 24;
 
             for (var i = 0; i < args.Length; i++)
             {
@@ -113,6 +174,30 @@ namespace Vodostaji.Probe
                         only.AddRange(args[++i].Split(',', StringSplitOptions.RemoveEmptyEntries));
                         break;
 
+                    case "--watch" when i + 1 < args.Length:
+                        if (!int.TryParse(args[++i], out var minutes))
+                        {
+                            return null;
+                        }
+
+                        watchInterval = TimeSpan.FromMinutes(minutes);
+                        if (watchInterval < MinWatchInterval)
+                        {
+                            Console.Error.WriteLine(
+                                $"--watch mora biti najmanje {MinWatchInterval.TotalMinutes:N0} minuta " +
+                                "(rate limit obećan u LEGAL.md §2.5).");
+                            return null;
+                        }
+
+                        break;
+
+                    case "--cycles" when i + 1 < args.Length:
+                        if (!int.TryParse(args[++i], out watchCycles) || watchCycles < 1)
+                        {
+                            return null;
+                        }
+                        break;
+
                     case "--drill-all":
                         drillAll = true;
                         break;
@@ -126,7 +211,8 @@ namespace Vodostaji.Probe
                 }
             }
 
-            return new ProbeOptions(fixtureRoot, delay, drillAll, sampleAll, only);
+            return new ProbeOptions(
+                fixtureRoot, delay, drillAll, sampleAll, only, watchInterval, watchCycles);
         }
 
         /// <summary>Fixtures idu u repo, ne pored binarija — traži korijen po `.git`.</summary>
@@ -154,6 +240,13 @@ namespace Vodostaji.Probe
                   --only <ids>    ograniči na izvore, zarezom odvojeno (avp-sava,avpjm,fhmzbih)
                   --drill-all     buši u svaki otkriveni servis, ne samo one iz SOURCES.md
                   --sample-all    povuci uzorak podataka za svaki sloj, ne samo imenovane
+
+                Watch mod — mjeri pomak vremenskih zona kroz vrijeme:
+
+                  --watch <min>   ciklus svakih N minuta (najmanje 10)
+                  --cycles <n>    koliko ciklusa (podrazumijevano 24)
+
+                  dotnet run --project tools/Probe -- --watch 60 --cycles 24
                 """);
         }
     }
