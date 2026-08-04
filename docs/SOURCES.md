@@ -220,6 +220,18 @@ Han Bila (`hvsHBila`), Tuzla, Kašići, Konjic.
 **Vrijeme je eksplicitno lokalno** (`4.8.2026 08:00`), u formatu `d.M.yyyy` + `HH:mm` — nema
 epocha, nema zone. Parsiraj kao `Europe/Sarajevo` i pretvori u UTC.
 
+**FHMZBIH poštuje ljetno vrijeme, za razliku od AVPJM-a.** Dokaz iz watch ciklusa
+`2026-08-04 22:43Z`: Martin Brod nosi `5.8.2026 00:00`. Kao CEST (UTC+2) to je `22:00Z`, tj.
+43 minute prije očitavanja ✓. Kao CET (UTC+1) bilo bi `23:00Z` — 17 minuta u budućnosti, što je
+nemoguće. Dakle `Europe/Sarajevo` sa punim DST pravilima.
+
+**Dvije agencije, dvije konvencije.** AVPJM je fiksno CET cijele godine, FHMZBIH je lokalno sa
+DST-om. Test DST prelaza mora pokriti oba slučaja odvojeno — ista funkcija za oba izvora je greška.
+
+Pojedinačne stranice stanica (`hvsZenica.php` i sl.) nose i koordinate stanice
+(`44.20795 17.90702`), vlasnika, rijeku, sliv, trend i vrijeme posljednjeg mjerenja.
+Zenica se ažurira satno, Bihać znatno rjeđe — potvrda da `ExpectedInterval` ide po stanici.
+
 **Frekvencija nije dnevna kako se pretpostavljalo.** U snimku Bihać nosi `4.8. 08:00`, a
 Martin Brod `5.8. 00:00` — razlika od 16 sati unutar iste tabele. `ExpectedInterval` mora biti
 po stanici, ne po izvoru.
