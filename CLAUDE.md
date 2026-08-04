@@ -48,7 +48,7 @@ Ako komanda ne postoji jer faza još nije došla — dodaj je ovdje čim je napr
 
 ## Stack
 
-.NET 8 / ASP.NET Core Minimal API · PostgreSQL 16 + PostGIS · Redis · React 18 + TypeScript + Vite · **MapLibre GL JS** · Tailwind · Recharts · TanStack Query · AngleSharp (scraping) · Serilog · Azure App Service.
+.NET 8 / ASP.NET Core Minimal API · PostgreSQL 16 + PostGIS · Redis · React 18 + TypeScript + Vite · **MapLibre GL JS** · Tailwind · Recharts · TanStack Query · AngleSharp (scraping) · Serilog · xUnit · Azure App Service.
 
 Ne uvodi nove biblioteke bez pitanja. Obrazloži zašto prije nego dodaš.
 

@@ -12,3 +12,8 @@ Mjeri se pomak između vremena koje izvor tvrdi i stvarnog vremena.
 [  ok] _watch/fhmzbih-hidro  21,900b  222ms
 [  ok] _watch/avpjm-mostar  259,387b  731ms
    58 očitanja upisano
+── ciklus 2/72 · 2026-08-04 23:05Z ──
+[  ok] _watch/sava-dionice  5,988b  184ms
+[  ok] _watch/fhmzbih-hidro  21,900b  636ms
+[  ok] _watch/avpjm-mostar  259,387b  1,231ms
+   58 očitanja upisano
