@@ -1,0 +1,14 @@
+Probe — Faza 0 · 2026-08-04 22:45:13Z
+User-Agent: VodostajiBiH-Probe/0.1 (+mailto:berbicanes6+vodostaji@gmail.com)
+Fixtures:   /Users/Anes/FHMZ App/tests/fixtures
+Pauza:      750ms između zahtjeva
+
+Watch mod — ciklus svakih 20 min, 72 ciklusa
+CSV: /Users/Anes/FHMZ App/tests/fixtures/_watch/watch.csv
+Mjeri se pomak između vremena koje izvor tvrdi i stvarnog vremena.
+
+── ciklus 1/72 · 2026-08-04 22:45Z ──
+[  ok] _watch/sava-dionice  5,988b  203ms
+[  ok] _watch/fhmzbih-hidro  21,900b  222ms
+[  ok] _watch/avpjm-mostar  259,387b  731ms
+   58 očitanja upisano

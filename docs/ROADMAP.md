@@ -4,28 +4,28 @@ Faza nije gotova dok svi izlazni kriteriji nisu ispunjeni. Pri prelasku faze až
 
 ---
 
-## Faza 0 — Probe ⬅️ **TRENUTNA**
+## Faza 0 — Probe ✅ **ZAVRŠENA 2026-08-04**
 
 Verifikacija stvarnosti prije ijedne linije adaptera.
 
 - [x] `tools/Probe` konzolna aplikacija
 - [x] `?f=json` pozvan na svim ArcGIS servisima i slojevima iz `SOURCES.md` — 26 servisa,
       6 foldera vraća `Token Required`, `Crowdsource_Flood_public` nije pokrenut
-- [x] Reprezentativna stranica snimljena za AVPJM i FHMZBIH
-- [ ] **RHMZ RS nije sondiran** — u `SOURCES.md` nije bilo nijednog URL-a. Nađi adrese,
-      pa pokreni sondu. Ovo je jedina stvar koja drži Fazu 0 otvorenom.
-- [x] Fixtures u `tests/fixtures/<source>/<layer>-YYYY-MM-DD.json` (209 zahtjeva, 200 uspješnih)
+- [x] Reprezentativna stranica snimljena za AVPJM, FHMZBIH, RHMZ RS i Vode Srpske
+- [x] RHMZ RS sondiran — adrese nađene čitanjem njihovih stranica i skripti. Ima JSON API,
+      ali nijedan endpoint ne servira vodostaje; mapa koja bi ih dala je pokvarena
+- [x] Fixtures u `tests/fixtures/<source>/<layer>-YYYY-MM-DD.json`
 - [x] `SOURCES.md` regenerisan sa stvarnim poljima, tipovima, domenima, renderer bojama
-- [x] Upozorenje "NEVERIFIKOVANO" uklonjeno, datum verifikacije upisan (osim §4)
+- [x] Upozorenje "NEVERIFIKOVANO" uklonjeno, datum verifikacije upisan
 
-**Ne piši adaptere u ovoj fazi.**
+**Faza 0 je zatvorena. Ne piši adaptere prije nego se pređe u Fazu 1.**
 
 **Nose se u Fazu 1:** zona `DATE_TIME`-a kod AVP Save nije riješena, a veza
 `HYDRO_ID` ↔ `HID_ID` nije potvrđena. Oboje je opisano u `SOURCES.md` → Otvorena pitanja.
 
 ---
 
-## Faza 1 — Vertikalni presjek
+## Faza 1 — Vertikalni presjek ⬅️ **TRENUTNA**
 
 Samo AVP Sava. Cilj je funkcionalna mapa sjeverne BiH od kraja do kraja.
 

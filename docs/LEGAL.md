@@ -41,7 +41,8 @@ Mail koji kaže *"napravio sam ovo, evo linka, radi, koristi vaše javne podatke
 |---|---|---|
 | AVP Sava | `info@voda.ba` | potvrda korištenja + stabilan endpoint + najava promjena |
 | AVP Jadranskog mora | `jsliv@jadran.ba` | pristup `isvportal.jadran.ba` (zamjena scrapera) |
-| JU "Vode Srpske" / RHMZ RS | — | bilo kakav strukturirani feed umjesto PDF biltena |
+| RHMZ RS | `051 315-538` (hidrologija), centrala `+387 51 433-522`, stavka „Захтјев за подацима" na `rhmzrs.com` | da proradi njihova mapa automatskih hidroloških stanica — ili endpoint iza nje |
+| JU "Vode Srpske" | `voders.org` | bilo kakav strukturirani feed; njihovi bilteni su časopis, ne podatak |
 | ISRBC | — | pristup Sava HIS |
 
 ## 4. Dnevnik

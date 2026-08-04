@@ -86,13 +86,13 @@ try
         Console.WriteLine();
     }
 
-    var htmlTargets = ProbeTargets.Html.Where(t => options.Includes(t.SourceId)).ToList();
-    if (htmlTargets.Count > 0)
+    var pageTargets = ProbeTargets.Pages.Where(t => options.Includes(t.SourceId)).ToList();
+    if (pageTargets.Count > 0)
     {
-        Console.WriteLine("── HTML izvori ──");
-        foreach (var target in htmlTargets)
+        Console.WriteLine("── Ostali izvori ──");
+        foreach (var target in pageTargets)
         {
-            await client.FetchAsync(target.SourceId, target.Name, target.Url, "html", cts.Token);
+            await client.FetchAsync(target.SourceId, target.Name, target.Url, target.Extension, cts.Token);
         }
         Console.WriteLine();
     }

@@ -1,9 +1,8 @@
 # SOURCES.md — specifikacije izvora
 
-> ✅ **STATUS: VERIFIKOVANO 2026-08-04** (UTC) — `tools/Probe`, 209 zahtjeva, 200 uspješnih.
+> ✅ **STATUS: VERIFIKOVANO 2026-08-04** (UTC) — `tools/Probe`, svi izvori uključujući RHMZ RS.
 > Sve ispod je izvedeno iz stvarnih odgovora servera, snimljenih u `tests/fixtures/`.
 > Izvještaj sonde: `tests/fixtures/_report/schema-2026-08-04.md`.
-> Izuzetak je **§4 (RHMZ RS)**, koji ostaje neverifikovan — vidi tamo zašto.
 
 Ponovna verifikacija: `dotnet run --project tools/Probe`. Fixtures nose datum u imenu, pa
 stari ostaju kao dokaz kako je shema izgledala ranije. Ako se stvarna shema razlikuje od
@@ -19,6 +18,8 @@ ovoga — stvarnost pobjeđuje, popravi ovaj fajl u istom commitu.
 | AVP Sava `DATE_TIME` je nedvosmislen | Vremenska zona **nije riješena** — vidi Otvorena pitanja |
 | Registar stanica ima upotrebljiv `OBJECTID` | `objectIdField` je `null`; `outFields=*` ruši upit |
 | `Crowdsource_Flood_public` je izvor | Servis postoji u katalogu ali **nije pokrenut** |
+| RHMZ RS nema API | **Ima dva** — ali nijedan ne servira vodostaje; mapa koja bi ih dala je pokvarena |
+| Vode Srpske objavljuju biltene sa vodostajima | 34 PDF-a, numerisana rednim brojem — časopis, ne operativni bilten |
 | Polja i boje sloja realnog vremena | **Potvrđeno tačno**, 1:1 sa dokumentacijom |
 
 ---
@@ -241,18 +242,87 @@ eksplicitno**, ovo je i alat za rješavanje otvorenog pitanja oko `DATE_TIME` u 
 
 ---
 
-## 4. RHMZ RS + Vode Srpske — `rhmz-rs` — PRIORITET 4, NAJTEŽE
+## 4. RHMZ RS + Vode Srpske — `rhmz-rs`, `vode-srpske` — PRIORITET 4, NAJTEŽE
 
-> ⚠️ **NEVERIFIKOVANO.** Ovaj izvor **nije sondiran u Fazi 0** jer u dokumentaciji nije bilo
-> nijednog URL-a, a Faza 0 ne izmišlja adrese. Prije Faze 4 mora se uraditi zaseban probe.
+**Verifikovano 2026-08-04.** Adrese nisu pogođene naslijepo — svaka je pročitana sa njihove
+stranice ili iz skripte koju ta stranica učitava.
 
-RHMZ RS osmatra vodostaje na hidrološkim stanicama u RS i objavljuje redovne i vanredne
-hidrološke biltene. Nema poznatog API-ja. Realno: HTML ili PDF parsiranje.
+- `https://rhmzrs.com` — RHMZ RS, živ
+- `https://novi.rhmzrs.com` — isti sadržaj i isti set skripti; ogledalo, ne zaseban izvor
+- `http://www.voders.org` — JU "Vode Srpske", **samo HTTP, bez TLS-a**
 
-Očekuj najviše lomljenja. Piši defanzivno, sa velikim brojem fixture testova, i tretiraj
-neuspjeh parsiranja kao **normalno stanje** koje se logira — ne kao izuzetak koji ruši job.
+### 4.1 Pretpostavka "nema API-ja" je bila pola tačna
 
-Ovo je izvor gdje direktan kontakt sa institucijom donosi najviše. Vidi `LEGAL.md`.
+RHMZ RS **ima JSON API.** Dva endpointa rade:
+
+| Endpoint | Sadržaj |
+|---|---|
+| `/api/flood-defense-points` | **11 tačaka odbrane od poplava, sa pragovima** |
+| `/api/meteo-stations` | 76 meteoroloških stanica — **nijedna hidrološka** |
+
+**Ali nijedan ne servira vodostaje.** Ono što bi ih serviralo je pokvareno, vidi §4.2.
+
+**`/api/flood-defense-points`** je najvrjedniji nalaz kod ovog izvora:
+
+| Polje | Primjer | Značenje |
+|---|---|---|
+| `place` | `Делибашино Село` | mjesto |
+| `ordinary_value` | `300` | **redovna odbrana, cm** |
+| `extraordinary_value` | `370` | **vanredna odbrana, cm** |
+| `kote0` | `141.38` | kota nule letve |
+| `nnv` | `<b>22</b><br><span class="date">09.06.1977.</span>` | najniži zabilježeni |
+| `vvv` | `<b>816</b><br><span class="date">16.05.2014.</span>` | najviši zabilježeni |
+| `river_basin` | `{'id': 3, 'title': 'Врбас', …}` | ugniježđen objekat sliva |
+
+Pragove definiše hidrolog i ovdje dolaze gotovi — zlatno pravilo 3 je zadovoljeno.
+`nnv` i `vvv` nose **HTML unutar JSON polja**; vrijednost i datum se moraju izvući, ne prikazati
+sirovo. Ćirilica je svuda, `place` se ne poklapa nužno sa nazivom stanice kod drugih izvora.
+
+### 4.2 Mapa automatskih hidroloških stanica je pokvarena
+
+`https://rhmzrs.com/page/hidrologija-mapa-stanica` obećava tačno ono što nam treba — tabela ima
+zaglavlje **Станица · Вријеме · Водостај · Температура воде** i Leaflet mapu.
+
+Tabela je prazna i ostaje prazna. Skripta `js/hydro-stations-leaflet.js` zove:
+
+```js
+axios.get(`${config.API.meteoStations}`).then(rs => { data = rs.data …
+```
+
+a `config` **nije definisan ni u jednoj od sedam skripti koje ta stranica učitava**
+(provjereno u `plugins.js`, `theme.js`, `latinization.js`, `framer.js`, datatables, leaflet,
+jQuery, i u samom HTML-u). Poziv baca `ReferenceError` prije nego išta krene.
+
+Fixture `hydro-stations-leaflet-js` je snimljen kao dokaz.
+
+**Praktično:** ako se to ikad popravi, iza njega vjerovatno stoji endpoint sa vodostajima i
+temperaturom vode, po stanici, sa vremenom — što bi RS pretvorilo iz najtežeg u lakši izvor.
+Vrijedi periodično provjeriti. **Ne graditi na tome dok ne proradi.**
+
+Stranica biltena (`/page/bilten-izvjestaj-o-vodostanju`) je takođe prazna u HTML-u i nema
+otkriven izvor podataka.
+
+### 4.3 Vode Srpske
+
+`voders.org` nosi **34 biltena u PDF-u**, imenovanih `ЈУ-Воде-Српске-БИЛТЕН-бројN.pdf`.
+Numerisani su rednim brojem, ne datumom — to je institucionalni časopis, **ne operativni
+dnevni bilten sa vodostajima**. Vijesti o vodostajima postoje kao tekst
+(`/opadanje-vodostaja-u-republici-srpskoj/`), ali kao proza, ne kao podatak.
+
+### 4.4 Zaključak za Fazu 4
+
+Za RS **ne postoji javno dostupan feed vodostaja u realnom vremenu.** Postoje pragovi
+(`/api/flood-defense-points`) i postoji mapa koja bi to riješila da radi.
+
+Piši defanzivno, sa velikim brojem fixture testova, i tretiraj neuspjeh parsiranja kao
+**normalno stanje** koje se logira — ne kao izuzetak koji ruši job. Do tada je RS realno
+`Unknown` na mapi, i to je pošten prikaz, ne rupa.
+
+**Kontakt** (iz podnožja `rhmzrs.com`): Републички хидрометеоролошки завод, Пут бањалучког
+одреда бб, 78000 Бања Лука. Централа `+387 51 433-522`, **хидрологија `051 315-538`**.
+Sajt ima i stavku **„Захтјев за подацима"** — formalni put koji se veže na argument o Zakonu o
+slobodi pristupa informacijama iz `LEGAL.md` §1. Ovo je izvor gdje direktan kontakt donosi
+najviše.
 
 ---
 
