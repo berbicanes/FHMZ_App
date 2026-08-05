@@ -50,6 +50,15 @@ public abstract record StationReading
         /// </summary>
         public required AlertLevel ClaimedLevel { get; init; }
 
+        /// <summary>
+        /// Trend koji **izvor objavljuje**, kad ga objavljuje.
+        ///
+        /// FHMZBIH ga daje kao oznaku (`R` raste, `O` opada, `S` stagnira); AVP Sava i AVPJM
+        /// ga ne daju. Kad postoji, ima prednost nad našim izvodom iz dva očitanja — tvrdnja
+        /// agencije je jača od našeg računa (zlatno pravilo 3).
+        /// </summary>
+        public PublishedTrend? Trend { get; init; }
+
         public override AlertLevel Level => ClaimedLevel;
 
         public override Measurement? Measurement => MeasuredValue;

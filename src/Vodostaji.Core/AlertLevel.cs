@@ -41,3 +41,23 @@ public static class AlertLevelExtensions
     /// <summary>Da li podatak uopšte postoji. Postoji tačno jedno mjesto gdje se ovo pita.</summary>
     public static bool IsKnown(this AlertLevel level) => level != AlertLevel.Unknown;
 }
+
+/// <summary>Smjer promjene vodostaja, kako ga izvor imenuje.</summary>
+public enum TrendDirection
+{
+    /// <summary>Izvor je poslao oznaku koju ne prepoznajemo. Nije "nema promjene".</summary>
+    Unknown = 0,
+
+    Rising,
+    Falling,
+    Steady,
+}
+
+/// <summary>
+/// Trend koji je objavio izvor, uz njegovu doslovnu oznaku.
+///
+/// <paramref name="LabelOriginal"/> se čuva i kad je mapiranje uspjelo — bez njega ne možemo
+/// primijetiti da je izvor uveo novu oznaku, ni pokazati korisniku šta je agencija stvarno
+/// napisala.
+/// </summary>
+public sealed record PublishedTrend(string LabelOriginal, TrendDirection Direction);

@@ -75,6 +75,13 @@ public sealed record ReachProperties
     /// </summary>
     public long? ChangeOverMinutes { get; init; }
 
+    /// <summary>Trend koji je **izvor objavio**, kad ga objavljuje. Ima prednost nad
+    /// razlikom koju sami izračunamo iz dva očitanja (zlatno pravilo 3).</summary>
+    public string? PublishedTrend { get; init; }
+
+    /// <summary>Doslovna oznaka trenda iz izvora (`R`, `O`, `S`).</summary>
+    public string? PublishedTrendLabel { get; init; }
+
     public required string AgencyName { get; init; }
 
     public required string AgencyUrl { get; init; }

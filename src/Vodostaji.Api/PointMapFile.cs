@@ -3,10 +3,10 @@ using System.Text;
 namespace Vodostaji.Api;
 
 /// <summary>
-/// GeoJSON sloja AVPJM-a. Zaseban fajl jer je zaseban sloj — dionice AVP Save i stanice
-/// AVPJM-a se ne stapaju ni u jedan odgovor.
+/// GeoJSON sloja jednog tačkastog izvora. **Jedan fajl po izvoru** — slojevi različitih
+/// agencija se ne stapaju ni u jedan odgovor.
 /// </summary>
-public sealed class AvpjmMapFile(string path, ILogger<AvpjmMapFile> logger)
+public sealed class PointMapFile(string sourceId, string path, ILogger<PointMapFile> logger)
 {
     private readonly SemaphoreSlim _lock = new(1, 1);
 
@@ -30,7 +30,8 @@ public sealed class AvpjmMapFile(string path, ILogger<AvpjmMapFile> logger)
                 .ConfigureAwait(false);
 
             File.Move(temporary, Path, overwrite: true);
-            logger.LogInformation("AVPJM sloj prepisan: {Bytes} bajta.", geoJson.Length);
+            logger.LogInformation(
+                "Sloj {SourceId} prepisan: {Bytes} bajta.", sourceId, geoJson.Length);
         }
         finally
         {

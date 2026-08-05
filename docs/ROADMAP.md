@@ -80,7 +80,7 @@ posao; zapisano da se zna da je izbor, ne previd.
 
 ---
 
-## Faza 3 — Jadranski sliv ⬅️ **TRENUTNA**
+## Faza 3 — Jadranski sliv ✅ **ZAVRŠENA 2026-08-05**
 
 Prvi put dva izvora u istoj mapi. **Ovdje se testira sav rad oko nejednake gustine i frekvencije** — ako je nešto pogrešno u modelu, ovdje puca.
 
@@ -125,14 +125,24 @@ SOURCES.md §2.
 
 ---
 
-## Faza 4 — FHMZBIH i RS
+## Faza 4 — FHMZBIH i RS ⬅️ **TRENUTNA**
 
 Puna pokrivenost. Očekuj da će RS adapter biti najkrhkiji dio sistema.
 
-- [ ] `FhmzbihScrapeSource`
+- [x] `FhmzbihSource` — 12 stanica, AngleSharp, koordinate i kota nule sa podstranica
 - [ ] `RhmzRsSource` (HTML + PDF bilteni)
 - [ ] Brčko — istražiti šta uopšte postoji
-- [ ] Neuspjeh parsiranja tretiran kao normalno stanje, ne kao pad joba
+- [x] Neuspjeh parsiranja tretiran kao normalno stanje, ne kao pad joba
+
+**Treći izvor, treća konvencija.** AVP Sava objavljuje stupanj opasnosti i mjeri na sat;
+AVPJM ne objavljuje stupanj i drži zimsko vrijeme cijele godine; FHMZBIH ne objavljuje
+stupanj, **poštuje ljetno vrijeme**, i jedini **objavljuje trend** (`R`, `O`, `S`).
+
+Zato je trend ušao u model kao `PublishedTrend`: kad ga izvor daje, ima prednost nad našim
+izvodom iz dva očitanja. Naš račun je zamjena za tvrdnju agencije, ne obrnuto.
+
+Oznaka `S2` se pojavljuje u njihovim podacima a značenje joj nije dokumentovano — ostaje
+`Unknown` uz sačuvanu oznaku. Pogrešno pogođen smjer trenda je pogrešan podatak o rijeci.
 
 ---
 

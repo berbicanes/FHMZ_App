@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import type {
   ReachCollection,
   ReachProperties,
@@ -8,9 +8,9 @@ import type {
   StationProperties,
 } from './api/types'
 import { DisclaimerBar, PersistentDisclaimer } from './components/DisclaimerBar'
-import { AvpjmLegend, Legend } from './components/Legend'
+import { Legend, PointSourceLegend } from './components/Legend'
 import { ReachDetail } from './components/ReachDetail'
-import { ReachMap } from './components/ReachMap'
+import { POINT_SOURCES, ReachMap, type PointSourceId } from './components/ReachMap'
 import { ReachTable } from './components/ReachTable'
 import { Search } from './components/Search'
 import { StationDetail } from './components/StationDetail'
@@ -48,12 +48,23 @@ export default function App() {
     staleTime: 60 * 60 * 1000,
   })
 
-  // Jadranski sliv — zaseban upit za zaseban sloj.
-  const avpjm = useQuery({
-    queryKey: ['avpjm'],
-    queryFn: () => fetchJson<ReachCollection>('/api/v1/geojson/avpjm'),
-    refetchInterval: 5 * 60 * 1000,
+  // Jedan upit po tačkastom izvoru. Zasebni slojevi, zasebni odgovori.
+  const pointQueries = useQueries({
+    queries: POINT_SOURCES.map((id) => ({
+      queryKey: ['points', id],
+      queryFn: () => fetchJson<ReachCollection>(`/api/v1/geojson/points/${id}`),
+      refetchInterval: 5 * 60 * 1000,
+    })),
   })
+
+  const points = useMemo(() => {
+    const map: Partial<Record<PointSourceId, ReachCollection>> = {}
+    POINT_SOURCES.forEach((id, index) => {
+      const data = pointQueries[index]?.data
+      if (data) map[id] = data
+    })
+    return map
+  }, [pointQueries])
 
   const sources = useQuery({
     queryKey: ['sources'],
@@ -67,9 +78,9 @@ export default function App() {
   const reachProperties = useMemo(
     () => [
       ...(reaches.data?.features.map((f) => f.properties) ?? []),
-      ...(avpjm.data?.features.map((f) => f.properties) ?? []),
+      ...POINT_SOURCES.flatMap((id) => points[id]?.features.map((f) => f.properties) ?? []),
     ],
-    [reaches.data, avpjm.data],
+    [reaches.data, points],
   )
   const stationProperties = useMemo(
     () => stations.data?.features.map((f) => f.properties) ?? [],
@@ -149,7 +160,7 @@ export default function App() {
 
           <ReachMap
             data={reaches.data}
-            avpjm={avpjm.data}
+            points={points}
             stations={stations.data}
             showStations={showStations || route.kind === 'station'}
             onSelect={(reach) =>
@@ -242,10 +253,19 @@ export default function App() {
             />
 
             {sources.data?.map((s) =>
-              s.sourceId === 'avpjm' ? (
-                <AvpjmLegend key={s.sourceId} agencyName={s.agencyName ?? 'izvor'} />
-              ) : (
+              s.sourceId === 'avp-sava' ? (
                 <Legend key={s.sourceId} agencyName={s.agencyName ?? 'izvor'} />
+              ) : (
+                <PointSourceLegend
+                  key={s.sourceId}
+                  agencyName={s.agencyName ?? 'izvor'}
+                  color={s.sourceId === 'avpjm' ? '#4a8fd4' : '#3aa8a0'}
+                  note={
+                    s.sourceId === 'avpjm'
+                      ? 'Ova agencija objavljuje vodostaj, ali ne i ocjenu opasnosti — bojenje po pragovima im je na sajtu dostupno samo prijavljenim korisnicima. Prikazujemo brojeve i pragove onako kako ih objavljuju, bez vlastite ocjene.'
+                      : 'Ova agencija objavljuje vodostaj i trend, ali ne i ocjenu opasnosti po stanici. Trend prikazujemo onako kako ga ona objavi, a ne izvodimo ga sami.'
+                  }
+                />
               ),
             )}
 

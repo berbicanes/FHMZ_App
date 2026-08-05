@@ -42,9 +42,13 @@ const BASEMAP: StyleSpecification = {
   ],
 }
 
+/** Tačkasti izvori. Svaki dobija svoj sloj — nikad zajednički. */
+export const POINT_SOURCES = ['avpjm', 'fhmzbih'] as const
+export type PointSourceId = (typeof POINT_SOURCES)[number]
+
 interface Props {
   data: ReachCollection | undefined
-  avpjm: ReachCollection | undefined
+  points: Partial<Record<PointSourceId, ReachCollection>>
   stations: StationCollection | undefined
   showStations: boolean
   onSelect: (properties: ReachProperties) => void
@@ -55,7 +59,7 @@ interface Props {
 
 export function ReachMap({
   data,
-  avpjm,
+  points,
   stations,
   showStations,
   onSelect,
@@ -119,7 +123,7 @@ export function ReachMap({
         return
       }
 
-      for (const layer of ['reaches-fill', 'reaches-no-data', 'avpjm-points']) {
+      for (const layer of ['reaches-fill', 'reaches-no-data', ...POINT_SOURCES.map(pointLayerId)]) {
         if (!instance.getLayer(layer)) continue
 
         instance.on('click', layer, (event) => {
@@ -165,9 +169,14 @@ export function ReachMap({
   }, [layersReady, data])
 
   useEffect(() => {
-    if (!layersReady || !avpjm) return
-    ;(map.current?.getSource('avpjm') as GeoJSONSource | undefined)?.setData(avpjm)
-  }, [layersReady, avpjm])
+    if (!layersReady) return
+
+    for (const id of POINT_SOURCES) {
+      const collection = points[id]
+      if (!collection) continue
+      ;(map.current?.getSource(pointSourceId(id)) as GeoJSONSource | undefined)?.setData(collection)
+    }
+  }, [layersReady, points])
 
   useEffect(() => {
     if (!layersReady || !stations) return
@@ -202,6 +211,9 @@ export function ReachMap({
  * Izdvojeno iz handlera da bi se moglo obuhvatiti jednim `try`. Ranije je izuzetak u bilo
  * kojem koraku prekidao ostatak i ostavljao mapu bez svega — uključujući boje opasnosti.
  */
+const pointSourceId = (id: PointSourceId) => `points-${id}`
+const pointLayerId = (id: PointSourceId) => `points-${id}-circles`
+
 function buildLayers(instance: MapLibreMap) {
   // Šrafura je obavezna (UI.md §2), ali ako platno zakaže, mapa se ne smije izgubiti.
   // Rezerva zadržava obrazac: siva ispuna uz isprekidanu ivicu.
@@ -300,31 +312,33 @@ function buildLayers(instance: MapLibreMap) {
     },
   })
 
-  // Jadranski sliv — zaseban izvor i zaseban sloj. Nikad stopljen sa dionicama: AVP Sava
-  // daje ocjenu opasnosti, AVPJM je ne daje, i jedna legenda za oboje bi morala izmisliti
-  // nešto za jednu od agencija (CLAUDE.md → Šta NE raditi).
-  instance.addSource('avpjm', {
-    type: 'geojson',
-    data: { type: 'FeatureCollection', features: [] },
-  })
+  // Tačkasti izvori — **jedan sloj po agenciji**, nikad zajednički i nikad stopljen sa
+  // dionicama. AVP Sava daje ocjenu opasnosti, AVPJM i FHMZBIH je ne daju, a boja im dolazi
+  // iz vlastite legende svakog izvora (CLAUDE.md → Šta NE raditi).
+  for (const id of POINT_SOURCES) {
+    instance.addSource(pointSourceId(id), {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    })
 
-  instance.addLayer({
-    id: 'avpjm-points',
-    type: 'circle',
-    source: 'avpjm',
-    paint: {
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4, 10, 8],
-      'circle-color': ['get', 'color'],
-      'circle-stroke-color': '#0d1117',
-      'circle-stroke-width': 1,
-      'circle-opacity': [
-        'case',
-        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,
-        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
-        0.9,
-      ],
-    },
-  })
+    instance.addLayer({
+      id: pointLayerId(id),
+      type: 'circle',
+      source: pointSourceId(id),
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4, 10, 8],
+        'circle-color': ['get', 'color'],
+        'circle-stroke-color': '#0d1117',
+        'circle-stroke-width': 1,
+        'circle-opacity': [
+          'case',
+          ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,
+          ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
+          0.9,
+        ],
+      },
+    })
+  }
 
   instance.addSource('stations', {
     type: 'geojson',

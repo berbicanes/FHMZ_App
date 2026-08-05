@@ -70,7 +70,20 @@ export function ReachDetail({
 
           {/* Strelica nikad ne ide sama. Trend je naš izvod iz dva očitanja, pa uz njega
               stoje tačna razlika i period — inače je tvrdnja koju korisnik ne može provjeriti. */}
-          {reach.changeCm !== null && reach.changeCm !== undefined && (
+          {/* Kad izvor sam objavi trend, prikazuje se njegova oznaka — bez naše razlike u
+              cm, jer je nismo mi ni računali. */}
+          {reach.publishedTrend && (
+            <p className="mb-2 flex flex-wrap items-baseline gap-x-1.5 text-sm">
+              <span aria-hidden="true">{trendArrow(trendOf(reach))}</span>
+              <span>{trendLabel(trendOf(reach))}</span>
+              <span className="text-xs text-[--color-text-muted]">
+                objavio {reach.agencyName}
+                {reach.publishedTrendLabel ? ` (oznaka „${reach.publishedTrendLabel}”)` : ''}
+              </span>
+            </p>
+          )}
+
+          {!reach.publishedTrend && reach.changeCm !== null && reach.changeCm !== undefined && (
             <p className="mb-2 flex flex-wrap items-baseline gap-x-1.5 text-sm">
               <span aria-hidden="true">{trendArrow(trendOf(reach))}</span>
               <span>{trendLabel(trendOf(reach))}</span>

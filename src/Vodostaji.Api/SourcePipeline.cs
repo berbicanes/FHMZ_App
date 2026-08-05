@@ -102,10 +102,16 @@ public sealed class AvpSavaPipeline(
     }
 }
 
-/// <summary>AVPJM — tačke, sve iz jednog zahtjeva, bez zasebne geometrije.</summary>
-public sealed class AvpjmPipeline(
+/// <summary>
+/// Izvor koji objavljuje tačke, a ne dionice: AVPJM i FHMZBIH.
+///
+/// Zajednički pipeline, ali **vlastita legenda i vlastiti fajl** po izvoru. Dijeljenje koda
+/// nije stapanje slojeva — svaki i dalje ide u svoj sloj sa svojom legendom.
+/// </summary>
+public sealed class PointSourcePipeline(
     SourceIngestRunner runner,
-    AvpjmMapFile mapFile,
+    ISourceLegend legend,
+    PointMapFile mapFile,
     TimeProvider timeProvider)
     : SourcePipeline(runner, timeProvider)
 {
@@ -120,7 +126,7 @@ public sealed class AvpjmPipeline(
             .ReadAsync(scoped, SourceId, result, cancellationToken)
             .ConfigureAwait(false);
 
-        var geoJson = AvpjmStationGeoJson.Build(result, Time.GetUtcNow(), previous);
+        var geoJson = PointSourceGeoJson.Build(result, legend, Time.GetUtcNow(), previous);
         await mapFile.WriteAsync(geoJson, cancellationToken).ConfigureAwait(false);
     }
 }

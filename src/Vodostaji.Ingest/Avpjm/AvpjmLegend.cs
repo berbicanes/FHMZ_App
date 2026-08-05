@@ -9,7 +9,7 @@ namespace Vodostaji.Ingest.Avpjm;
 /// i ovdje se vidi zašto to nije formalnost: AVP Sava ima pet stupnjeva sa zvaničnim bojama,
 /// AVPJM nema nijedan. Zajednička legenda bi morala izmisliti nešto za jednu od njih.
 /// </summary>
-public static class AvpjmLegend
+public sealed class AvpjmLegend : ISourceLegend
 {
     /// <summary>
     /// Jedna boja za sve, jer ocjene nema.
@@ -24,13 +24,13 @@ public static class AvpjmLegend
     /// izgleda isto bez obzira ko ga nema.</summary>
     public const string NoDataColor = "#CCCCCC";
 
-    public static string Color(AlertLevel level, bool hasMeasurement) =>
-        hasMeasurement && level == AlertLevel.Unknown ? MeasuredColor : NoDataColor;
+    public string Color(StationReading reading) =>
+        reading.Measurement is not null ? MeasuredColor : NoDataColor;
 
     /// <summary>
     /// Natpis. "Nema ocjene" nije isto što i "nema podatka", i razlika mora biti u tekstu
     /// jer je u ovom sloju to jedina razlika koja postoji.
     /// </summary>
-    public static string Label(bool hasMeasurement) =>
-        hasMeasurement ? "Izmjereno, bez ocjene opasnosti" : "Nema podatka";
+    public string Label(StationReading reading) =>
+        reading.Measurement is not null ? "Izmjereno, bez ocjene opasnosti" : "Nema podatka";
 }

@@ -10,6 +10,7 @@ using Vodostaji.Data;
 using Vodostaji.Ingest;
 using Vodostaji.Ingest.AvpSava;
 using Vodostaji.Ingest.Avpjm;
+using Vodostaji.Ingest.Fhmzbih;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,7 @@ builder.Services.AddHttpClient<AvpSavaArcGisSource>(ConfigureSourceClient);
 builder.Services.AddHttpClient<AvpSavaGeometrySource>(ConfigureSourceClient);
 builder.Services.AddHttpClient<AvpSavaStationSource>(ConfigureSourceClient);
 builder.Services.AddHttpClient<AvpjmSource>(ConfigureSourceClient);
+builder.Services.AddHttpClient<FhmzbihSource>(ConfigureSourceClient);
 
 // Jedan pipeline po izvoru. Dodavanje trećeg izvora je dodavanje jedne registracije;
 // ne postoji mjesto na kojem bi se dva izvora mogla nehotice preplesti.
@@ -48,11 +50,20 @@ builder.Services.AddSingleton<SourcePipeline>(services => new AvpSavaPipeline(
     services.GetRequiredService<TimeProvider>(),
     services.GetRequiredService<ILogger<AvpSavaPipeline>>()));
 
-builder.Services.AddSingleton<SourcePipeline>(services => new AvpjmPipeline(
+builder.Services.AddSingleton<SourcePipeline>(services => new PointSourcePipeline(
     new SourceIngestRunner(
         services.GetRequiredService<AvpjmSource>(),
         services.GetRequiredService<TimeProvider>()),
-    services.GetRequiredService<AvpjmMapFile>(),
+    new AvpjmLegend(),
+    PointMapFileFor(services, AvpjmSource.Id),
+    services.GetRequiredService<TimeProvider>()));
+
+builder.Services.AddSingleton<SourcePipeline>(services => new PointSourcePipeline(
+    new SourceIngestRunner(
+        services.GetRequiredService<FhmzbihSource>(),
+        services.GetRequiredService<TimeProvider>()),
+    new FhmzbihLegend(),
+    PointMapFileFor(services, FhmzbihSource.Id),
     services.GetRequiredService<TimeProvider>()));
 
 builder.Services.AddSingleton(services => new ReachMapFile(
@@ -65,9 +76,15 @@ builder.Services.AddSingleton(services => new StationMapFile(
     Path.Combine(builder.Environment.ContentRootPath, "data", "stations.geojson"),
     services.GetRequiredService<ILogger<StationMapFile>>()));
 
-builder.Services.AddSingleton(services => new AvpjmMapFile(
-    Path.Combine(builder.Environment.ContentRootPath, "data", "avpjm.geojson"),
-    services.GetRequiredService<ILogger<AvpjmMapFile>>()));
+// Jedan fajl po tačkastom izvoru. Slojevi se ne stapaju ni na disku.
+builder.Services.AddSingleton<IReadOnlyDictionary<string, PointMapFile>>(services =>
+    new[] { AvpjmSource.Id, FhmzbihSource.Id }.ToDictionary(
+        id => id,
+        id => new PointMapFile(
+            id,
+            Path.Combine(builder.Environment.ContentRootPath, "data", $"{id}.geojson"),
+            services.GetRequiredService<ILogger<PointMapFile>>()),
+        StringComparer.Ordinal));
 
 builder.Services.AddHostedService<IngestHostedService>();
 
@@ -119,19 +136,28 @@ app.MapGet("/api/v1/geojson/reaches", async (ReachMapFile file, CancellationToke
    .Produces<ReachFeatureCollection>(StatusCodes.Status200OK, "application/geo+json")
    .WithName("GetReaches");
 
-// Jadranski sliv — zaseban sloj sa zasebnom legendom. Nikad stopljen sa dionicama.
-app.MapGet("/api/v1/geojson/avpjm", async (AvpjmMapFile file, CancellationToken ct) =>
+// Tačkasti izvori — svaki svoj sloj sa svojom legendom. Nikad stopljeni sa dionicama
+// ni međusobno.
+app.MapGet("/api/v1/geojson/points/{sourceId}", async (
+    string sourceId,
+    IReadOnlyDictionary<string, PointMapFile> files,
+    CancellationToken ct) =>
 {
+    if (!files.TryGetValue(sourceId, out var file))
+    {
+        return Results.NotFound(new { message = $"Izvor `{sourceId}` nije tačkasti sloj." });
+    }
+
     var geoJson = await file.ReadAsync(ct);
 
     return geoJson is null
         ? Results.Problem(
-            "Sloj Jadranskog sliva još nije generisan.",
+            $"Sloj `{sourceId}` još nije generisan.",
             statusCode: StatusCodes.Status503ServiceUnavailable)
         : Results.Text(geoJson, "application/geo+json");
 })
    .Produces<ReachFeatureCollection>(StatusCodes.Status200OK, "application/geo+json")
-   .WithName("GetAvpjm");
+   .WithName("GetPointSource");
 
 // Registar mjernih mjesta. Nema status ni boju — kaže gdje se mjeri, ne kakvo je stanje.
 app.MapGet("/api/v1/geojson/stations", async (StationMapFile file, CancellationToken ct) =>
@@ -225,6 +251,9 @@ else
 }
 
 app.Run();
+
+static PointMapFile PointMapFileFor(IServiceProvider services, string sourceId) =>
+    services.GetRequiredService<IReadOnlyDictionary<string, PointMapFile>>()[sourceId];
 
 static void ConfigureSourceClient(HttpClient client)
 {

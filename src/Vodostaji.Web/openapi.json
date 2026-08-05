@@ -26,12 +26,22 @@
         }
       }
     },
-    "/api/v1/geojson/avpjm": {
+    "/api/v1/geojson/points/{sourceId}": {
       "get": {
         "tags": [
           "Vodostaji.Api"
         ],
-        "operationId": "GetAvpjm",
+        "operationId": "GetPointSource",
+        "parameters": [
+          {
+            "name": "sourceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -431,6 +441,14 @@
           "changeOverMinutes": {
             "type": "integer",
             "format": "int64",
+            "nullable": true
+          },
+          "publishedTrend": {
+            "type": "string",
+            "nullable": true
+          },
+          "publishedTrendLabel": {
+            "type": "string",
             "nullable": true
           },
           "agencyName": {

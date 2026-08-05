@@ -69,7 +69,11 @@ internal static class ProbeTargets
 
         new("fhmzbih", "hvs-zenica",
             "https://www.fhmzbih.gov.ba/latinica/HIDRO/hvsZenica.php", "html",
-            "SOURCES.md §3 — stanica sa satnim osvježavanjem, nosi koordinate"),
+            "SOURCES.md §3 — podstranica stanice: koordinate, kota nule, trend"),
+
+        new("fhmzbih", "hvs-bihac",
+            "https://www.fhmzbih.gov.ba/latinica/HIDRO/hvsBihac.php", "html",
+            "SOURCES.md §3 — druga podstranica, za provjeru da je oblik isti"),
 
         new("fhmzbih", "fop-index",
             "https://fop.fhmzbih.gov.ba", "html",

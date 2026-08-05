@@ -1,0 +1,585 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="description" content="FEDERALNI HIDROMETEOROLOŠKI ZAVOD" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Federalni hidrometeorološki zavod</title>
+    <!---------------------------------------------------------------------->
+<link rel="stylesheet" type="text/css" href="../css/styles.css" />
+<script type="text/javascript" src="../js/jquery-1.5.2.min.js"></script>
+<script type="text/javascript" src="../js/jquery.cycle.all.min.js"></script>
+<script type="text/javascript" src="../js/functions.js"></script>
+<script>
+$(function(){
+      $("#heder").load("../heder.html"); 
+    });
+$(function(){
+      $("#gradovi").load("gradovi.htm"); 
+    });
+$(function(){
+      $("#footer").load("../footer.html"); 
+    });
+</script>
+  
+
+<!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+<script type="text/javascript" src="../../js/jquery.magnifier.js">
+
+/***********************************************
+* jQuery Image Magnify- (c) Dynamic Drive DHTML code library (www.dynamicdrive.com)
+* Please keep this notice intact
+* Visit Dynamic Drive at http://www.dynamicdrive.com/ for this script and 100s more
+***********************************************/
+
+</script>-->
+
+<style type="text/css">
+
+table { 
+  width: 70%; 
+  border-collapse: collapse;
+  font-size:smaller;
+ 
+}
+/* Zebra striping */
+tr:nth-of-type(odd) { 
+  background: #eee; 
+}
+th { 
+  background: #DFEAFF; 
+  color: white; 
+  font-weight: bold; font-size:10px;
+}
+td, th { 
+  padding: 3px; 
+  border: 1px solid #ccc; 
+  text-align: left; 
+}
+
+/* 
+Max width before this PARTICULAR table gets nasty
+This query will take effect for any screen smaller than 760px
+and also iPads specifically.
+*/
+@media 
+only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px)  {
+
+	/* Force table to not be like tables anymore */
+	table, thead, tbody, th, td, tr { 
+		display: block; 
+	}
+	
+	/* Hide table headers (but not display: none;, for accessibility) */
+	thead tr { 
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
+	
+	tr { border: 1px solid #ccc; }
+	
+	td { 
+		/* Behave  like a "row" */
+		border: none;
+		border-bottom: 1px solid #eee; 
+		position: relative;
+		padding-left: 50%; 
+	}
+	
+	td:before { 
+		/* Now like a table header */
+		position: absolute;
+		/* Top/left values mimic padding */
+		top: 6px;
+		left: 6px;
+		width: 45%; 
+		padding-right: 10px; 
+		white-space: nowrap;
+	}
+	
+	/*
+	Label the data
+	*/
+	/*td:nth-of-type(1):before { content: "Stanica"; }
+	td:nth-of-type(2):before { content: "Vodotok"; }
+	td:nth-of-type(3):before { content: "Datum"; }
+	td:nth-of-type(4):before { content: "Vrijeme (h)"; }
+	td:nth-of-type(5):before { content: "Vodostaj (cm)"; }
+	td:nth-of-type(6):before { content: "Trend"; }*/
+}
+/*td{border-bottom:thin dotted #E9E9E9;}*/
+
+<!--
+#tabele{box-shadow: 2px 2px 8px #888888; border-bottom:thin dotted #003366}
+-->
+/*#bijela{ background-color:#FFFFFF; text-align:center;}
+#plava{ background-color:#DFEAFF;text-align:center;}*/
+
+</style>
+<style type="text/css">
+#napomena{ font-size:14px; background-color:rgba(0,51,153,0.2); padding:10px; margin:20px; round-corners:5px; 
+
+}
+</style>
+<style>
+.zoom {
+    padding: 5px;
+    background-color: #003366;
+    transition: transform .2s; /* Animation */
+    margin: 0 auto;
+}
+
+.zoom:hover {
+    transform: scale(1.5); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+	transform-origin: top right;
+	z-index:9999;
+}
+</style>
+
+<style type="text/css">
+.listing {
+    display: inline-block;
+	font-size:12px;
+}
+
+.listing a { 
+    float: left;
+    padding: 2px 4px;
+    text-decoration: none;
+}
+
+.listing a.active {
+    background-color: #999;
+    color: white;
+    border-radius: 5px;
+}
+
+.listing a:hover:not(.active) {
+    background-color: #ddd;
+    border-radius: 5px;
+}
+</style>
+<style>
+div.gallery {
+    border: 1px solid #ccc;
+}
+
+div.gallery:hover {
+    border: 1px solid #777;
+}
+
+div.gallery img {
+    width: 100%;
+    height: auto;
+}
+
+div.desc {
+    padding: 15px;
+    text-align: center;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.responsive {
+    padding: 0 6px;
+    float: left;
+    width: 24.99999%;
+}
+
+@media only screen and (max-width: 700px){
+    .responsive {
+        width: 49.99999%;
+        margin: 6px 0;
+    }
+}
+
+@media only screen and (max-width: 500px){
+    .responsive {
+        width: 100%;
+    }
+}
+
+.clearfix:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+</style>
+</head>
+<body>
+<div id="page">
+  <div id="container">
+  	<div id="heder"> </div>
+    <div id="content">
+	<div class="clearer"></div>
+	<div class="spacer"></div>
+	<div class="clearer"></div>
+	  <div class="column-3-3">
+      	<div class="column-2-3">
+            <div class="white-box">
+              <div class="box-title"> &nbsp;aktuelni vodostaji</div>
+               <div class="box-content">
+                <div class="listing">  
+                    <a href="../index.php">početna</a> 
+                    <a href="javascript:pokazisamo('izbornik7');"id="myHeader1">hidrologija</a> 
+                    <a href="">dnevni vodostaji</a>
+                </div>
+				<div class="clearer"></div>
+				<div class="spacer"></div>
+                <div class="column-1-2">
+		<link rel="stylesheet" type="text/css" href="css/styles-2.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="bojaMarkera.js"></script>
+	<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+		}
+		.leaflet-container {
+			height: 380px;
+			width: 430px;
+			max-width: 100%;
+			max-height: 100%;
+		}
+	</style>
+
+<style type="text/css">
+#legenda {
+	height: 200px;
+	width: 262px;
+	position: absolute;
+	top: 128px;
+	right: 0px;
+	text-align:left;
+}
+
+#napomena {
+	width:380px;
+	font-style:normal;
+	font-size:12px;
+	font-family:Geneva, Arial, Helvetica, sans-serif;
+	font-weight:normal;
+	border:thin inset #246fb0;
+	background-color: #E2E2E2;
+}
+			/*.nevidljivo { visibility: hidden; display: none;}*/
+.tabela {
+	box-shadow: 2px 2px 15px #888888;
+	border:2px  #ccc solid;
+	padding:5px;
+	
+}
+td  {border:thin #ccc dotted;padding-left:2px;}
+
+.a0{background-color:#ccCCcc; text-align:center; font:bolder;} 
+.b1{background-color:#50F0E6; text-align:center; font:bolder;}
+.c2{background-color:#50CCAA; text-align:center; font:bolder;}
+.d3{background-color:#F0E641; text-align:center; font:bolder;}
+.e4{background-color:#FF5050; text-align:center; font:bolder;}
+.f5{background-color:#960005; text-align:center; font:bolder;color:#FFFFFF;}
+.g6{background-color:#7D2181; text-align:center; font:bolder;color:#FFFFFF;}
+
+
+</style>
+
+
+  
+<body onLoad="initialize()">
+
+
+
+<!----------------------------------------------------------------------------------------->			       
+<!--
+$latBI = 44.81367,15.87508
+$latMB = 44.48052,16.14071
+$latSM = 44.76649,16.67020
+$latVP = 44.68999,16.73570 
+$latSA = 43.85722,18.42672
+$latRE = 43.88669,18.31826
+$latZE = 44.20795,17.90702
+$latTZ = 44.53930,18.66469
+$latHB = 44.18195,17.76615
+$latLP = 43.94306,18.08198
+$latKS = 43.53354,18.07264
+$latKO = 43.64218,17.96164
+
+
+-->
+    <div id='map'></div>
+    <script>
+const cities = L.layerGroup();
+const mBihac = 
+	L.marker([44.81367,15.87508],{icon:SIcon}).bindPopup('BIHAĆ<br>vrijednost: 22<br>5.8.2026 u 08:00').addTo(cities);
+const mMBrod = 
+	L.marker([44.48052,16.14071],{icon:SIcon}).bindPopup('MARTIN BROD<br>vrijednost: 42<br>5.8.2026 u 09:00').addTo(cities);
+const mSMost = 
+	L.marker([44.76649,16.67020],{icon:OIcon}).bindPopup('SANSKI MOST<br>vrijednost: 76<br>5.8.2026 u 08:00').addTo(cities);
+const mVrhpolje = 
+	L.marker([44.68999,16.73570],{icon:RIcon}).bindPopup('VRHPOLJE<br>vrijednost: 36<br>5.8.2026 u 09:00').addTo(cities);
+const mCumurija = 
+	L.marker([43.85722,18.42672],{icon:RIcon}).bindPopup('SARAJEVO (ĆUMURIJA)<br>vrijednost: 90<br>5.8.2026 u 09:00').addTo(cities);
+const mReljevo = 
+	L.marker([43.88669,18.31826],{icon:SIcon}).bindPopup('RELJEVO<br>vrijednost: 113<br>5.8.2026 u 09:00').addTo(cities);
+const mZenica = 
+	L.marker([44.20795,17.90702],{icon:SIcon}).bindPopup('ZENICA<br>vrijednost: 64<br>5.8.2026 u 09:00').addTo(cities);
+const mTuzla = 
+	L.marker([44.53930,18.66469],{icon:RIcon}).bindPopup('TUZLA<br>vrijednost: -21<br>5.8.2026 u 09:00').addTo(cities);
+const mHBila = 
+	L.marker([44.18195,17.76615],{icon: SIcon}).bindPopup('HAN BILA<br>vrijednost: 32<br>5.8.2026 u 09:00').addTo(cities);
+const mKiseljak = 
+	L.marker([43.94306,18.08198],{icon:SIcon}).bindPopup('KISELJAK<br>vrijednost: 4<br>5.8.2026 u 09:00').addTo(cities);
+const mKasici = 
+	L.marker([43.53354,18.07264],{icon:S2Icon}).bindPopup('KAŠIĆI<br>vrijednost: 94<br>5.8.2026 u 09:00').addTo(cities);
+const mKonjic = 
+	L.marker([43.64218,17.96164],{icon:S2Icon}).bindPopup('KONJIC<br>vrijednost: 127<br>5.8.2026 u 09:00').addTo(cities);
+
+
+
+
+const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	maxZoom: 19,
+	attribution: '&copy; <a href="http://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+});
+
+const osmHOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+	maxZoom: 19,
+	attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>'
+});
+
+const map = L.map('map', {
+	center: [44.017,17.9],
+	zoom: 7.4,
+	layers: [osm, cities]
+});
+
+const baseLayers = {
+	'OpenStreetMap': osm,
+	'OpenStreetMap.HOT': osmHOT
+};
+
+const overlays = {
+	'Cities': cities
+};
+
+const layerControl = L.control.layers(baseLayers, overlays).addTo(map);
+
+const crownHill = L.marker([43.87, 18.42]).bindPopup('Bihac');
+const rubyHill = L.marker([43.75, 18.04]).bindPopup('Ivan Sedlo');
+
+const parks = L.layerGroup([crownHill, rubyHill]);
+
+const openTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+	maxZoom: 20,
+	attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+});
+layerControl.addBaseLayer(openTopoMap, 'OpenTopoMap');
+/*layerControl.addOverlay(parks, 'Parks');*/
+</script>	    	<p>LEGENDA - TIPOVI OBAVJEŠTENJA:
+    	 <table width="100%" border="0" cellspacing="0">
+		<tr>
+          <td width="22%"><img src="http://www.fhmzbih.gov.ba/slike/zajednicke/karata BIH/POZOR-0.png" width="20" height="20" /></td>
+          <td width="78%">Nema potrebe za obavještavanjem.</td>
+        </tr>
+        <tr>
+          <td><img src="http://www.fhmzbih.gov.ba/slike/zajednicke/karata BIH/POZOR-3.png" width="20" height="20" /></td>
+          <td>Vodostaj dosegao nivo kontinuiranog obavještavanja stanovništva i CZ</td>
+        </tr>
+        <tr>
+          <td><img src="http://www.fhmzbih.gov.ba/slike/zajednicke/karata BIH/POZOR-00.png" width="20" height="20" /></td>
+          <td>Nema podataka o vodostaju</td>
+        </tr>
+      </table>
+      	</p>   
+                </div>
+                <div class="column-1-2">
+    <table id="table" >
+      <tr >
+        <td width="14%" rowspan="2" align="center" valign="middle" > Vodotok</td>
+        <td width="16%" rowspan="2" align="center" valign="middle" >Vodomjerna stanica</td>
+        <td colspan="13" align="center" valign="middle" >V O D O S T A J<span ><strong> (cm)</strong></span></td>
+      </tr>
+      <tr >
+        <td width="14%" align="center" valign="middle" >Datum </td>
+        <td width="14%" align="center" valign="middle" >Vrijeme</td>
+        <td width="14%" align="center" valign="middle" >Aktuelni vodostaj</td>
+        <td width="12%" align="center" valign="middle" >Trend</td>
+        <td colspan="9" align="center" valign="top" >Kontinuirano obavještavanje <br />
+          stanovništva i CZ</td>
+        </tr>
+      <tr bgcolor="#E9F3FC">
+        <td rowspan="2" align="center"  valign="middle" >Una</td>
+        <td align="left" valign="middle" ><a href="javascript:show_agencije('boxes1')">Bihać</a></td>
+        <td align="center" valign="middle">5.8.2026</td>
+        <td align="center" valign="middle">08:00</td>
+        <td align="center">22</td>
+        <td align="center"><img src="../../slike/zajednicke/karata BIH/S.png" /></td>
+        <td align="center" valign="middle" >100</td>
+        </tr>
+      <tr bgcolor="#E9F3FC">
+        <td align="left" valign="middle" ><a href="javascript:show_agencije('boxes7')">Martin Brod</a></td>
+        <td align="center" valign="middle"> 5.8.2026 </td>
+        <td align="center" valign="middle"> 09:00 </td>
+        <td align="center">42</td>
+        <td align="center"><img src="../../slike/zajednicke/karata BIH/S.png" /></td>
+        <td align="center" valign="middle" >&nbsp;</td>
+        </tr>
+      <tr bgcolor="#FFFFFF">
+        <td rowspan="2" align="center"  valign="middle" >Sana</td>
+        <td align="left"   valign="middle" ><a href="javascript:show_agencije('boxes9')">Sanski Most</a></td>
+        <td align="center" valign="middle"> 5.8.2026</td>
+        <td align="center" valign="middle" >08:00</td>
+        <td align="center">76</td>
+        <td align="center"><img src="../../slike/zajednicke/karata BIH/O.png" /></td>
+        <td align="center" valign="middle" >310</td>
+        </tr>
+      <tr bgcolor="#FFFFFF">
+        <td align="left"   valign="middle" ><a href="javascript:show_agencije('boxes11')">Vrhpolje</a></td>
+        <td align="center" valign="middle"> 5.8.2026</td>
+        <td align="center" valign="middle" >09:00</td>
+        <td align="center">36</td>
+        <td align="center"><img src="../../slike/zajednicke/karata BIH/R.png" /></td>
+        <td align="center" valign="middle" >&nbsp;</td>
+        </tr>
+      <tr bgcolor="#E9F3FC" >
+        <td align="center"  valign="middle" >Miljacka</td>
+        <td align="left"   valign="middle" ><a href="javascript:show_agencije('boxes2')">Sarajevo</a></td>
+        <td align="center" valign="middle"> 5.8.2026</td>
+        <td align="center" valign="middle" >09:00</td>
+        <td align="center">90</td>
+        <td align="center"><img src="../../slike/zajednicke/karata BIH/R.png" /></td>
+        <td align="center" valign="middle" >&nbsp;</td>
+        </tr>
+      <tr >
+        <td rowspan="2" align="center" valign="middle"  bgcolor="#FFFFFF">Bosna</td>
+        <td align="left" valign="middle" ><a href="javascript:show_agencije('boxes8')">Reljevo</a></td>
+        <td align="center" valign="middle"> 5.8.2026</td>
+        <td align="center" valign="middle" >09:00</td>
+        <td align="center">113</td>
+        <td align="center"><img src="../../slike/zajednicke/karata BIH/S.png" /></td>
+        <td align="center" valign="middle" >300</td>
+        </tr>
+      <tr>
+        <td align="left"   valign="middle" ><a href="javascript:show_agencije('boxes12')">Zenica</a></td>
+        <td align="center" valign="middle"> 5.8.2026</td>
+        <td align="center" valign="middle" >09:00</td>
+        <td align="center">64</td>
+        <td align="center" bgcolor="#FFFFFF"><img src="../../slike/zajednicke/karata BIH/S.png" /></td>
+        <td align="center" valign="middle" >&nbsp;</td>
+        </tr>
+      
+      <tr >
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >Lepenica</td>
+        <td align="left"   valign="middle" bgcolor="#E9F3FC" ><a href="javascript:show_agencije('boxes5')">Kiseljk</a></td>
+        <td align="center" valign="middle"> 5.8.2026</td>
+        <td align="center" valign="middle" >09:00</td>
+        <td align="center">4</td>
+        <td align="center" bgcolor="#E9F3FC"><img src="../../slike/zajednicke/karata BIH/S.png" /></td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >&nbsp;</td>
+        </tr>
+      <tr >
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >Bila</td>
+        <td align="left"   valign="middle" bgcolor="#E9F3FC" ><a href="javascript:show_agencije('boxes3')">Han Bila</a></td>
+        <td align="center" valign="middle"> 5.8.2026</td>
+        <td align="center" valign="middle" >09:00</td>
+        <td align="center">32</td>
+        <td align="center" bgcolor="#E9F3FC"><img src="../../slike/zajednicke/karata BIH/S.png" /></td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >&nbsp;</td>
+        </tr>
+     <tr >
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >Jala</td>
+        <td align="left"   valign="middle" bgcolor="#E9F3FC" ><a href="javascript:show_agencije('boxes10')">Tuzla</a></td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >5.8.2026</td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >09:00</td>
+        <td align="center" bgcolor="#E9F3FC">-21</td>
+        <td align="center" bgcolor="#E9F3FC"><img src="../../slike/zajednicke/karata BIH/R.png" /></td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >100</td>
+        </tr> 
+     <tr >
+        <td rowspan="2" align="center" valign="middle" bgcolor="#E9F3FC" >Neretva</td>
+        <td align="left"   valign="middle" bgcolor="#E9F3FC" ><a href="javascript:show_agencije('boxes4')">Kašići</a></td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >5.8.2026</td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >09:00</td>
+        <td align="center" bgcolor="#E9F3FC">94</td>
+        <td align="center" bgcolor="#E9F3FC"><img src="../../slike/zajednicke/karata BIH/S2.png" /></td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >&nbsp;</td>
+        </tr>
+     <tr >
+        <td align="left"   valign="middle" bgcolor="#E9F3FC" ><a href="javascript:show_agencije('boxes6')">Konjic</a></td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >5.8.2026</td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >09:00</td>
+        <td align="center" bgcolor="#E9F3FC">127</td>
+        <td align="center" bgcolor="#E9F3FC"><img src="../../slike/zajednicke/karata BIH/S2.png" /></td>
+        <td align="center" valign="middle" bgcolor="#E9F3FC" >&nbsp;</td>
+        </tr>      
+</table>
+<p><strong>Napomena: </strong>Hidrološke stanice Sanski Most i Bihać nisu automatske, stoga su prikazani podaci dostupni na dnevnom nivou.
+</p>
+    <p  align="left">
+        Podaci  sa vodomjernih stanica koje prikuplja Informacioni  sistem  voda, mogu se naći na internet stranicama:
+        <ul>
+        	<ol><a href="http://www.voda.ba/vodostaji/" target="_blank">Agencije za vodno područje rijeke Save, Sarajevo</a></ol>
+            <ol><a href="http://www.jadran.ba/" target="_blank">Agencije za vodno područje Jadranskog mora, Mostar</a></ol>
+            <ol><a href="https://www.savacommission.org/" target="_blank">Međunarodna komisija za sliv rijeke Save</a></ol>
+        </ul>    
+    </p>    </td>                
+				</div>
+				<div class="clearer"></div>
+				<div class="spacer"></div>
+              </div>
+      		 </div>  
+        </div>
+      	<div class="column-1-3">
+        	<div class="white-box">
+          	  <div class="box-title"> &nbsp;hidrologija</div>
+          	  <div class="box-content">			<ul class="categories">
+              	<li><a href="saopcenje.php">Saopćenje za javnost</a> </li>
+              	<li><a href="index.php">Aktuelni vodostaji</a> 
+                	<ul>
+                        <li><a href="hvsBihac.php">HS Bihać</a></li>
+                        <li><a href="hvsMBrod.php">HS Martin Brod</a></li>
+                        <li><a href="hvsSMost.php">HS Sanski Most</a></li>
+                        <li><a href="hvsVrhpolje.php">HS Vrhpolje</a></li>
+                        <li><a href="hvsCumurija.php">HS Sarajevo</a></li>
+                        <li><a href="hvsReljevo.php">HS Reljevo</a></li>
+                        <li><a href="hvsZenica.php">HS Zenica</a></li>
+                        <li><a href="hvsKiseljak.php">HS Kiseljak</a></li>                        
+                        <li><a href="hvsHBila.php">HS Han Bila</a></li>
+                        <li><a href="hvsTuzla.php">HS Tuzla</a></li>
+                        <li><a href="hvsKasici.php">HS Kašići</a></li>
+                    	<li><a href="hvsKonjic.php">HS Konjic</a></li>
+                     </ul>   
+                </li>
+                 
+              	<li><a href="Hkarakteristike.php">Hidro karakteristike Bosne i Hercegovine</a></li> 
+                <li><a href="godisnjaci.php">Hidrološki godišnjaci</a> </li> 
+             <hr />
+             VANJSKI LINKOVI
+             	<li>
+             		<ul>
+                		<li><a href="http://www.voda.ba/vodostaji/"  target="_blank">Agencije za vodno područje rijeke Save</a></li>
+                		<li><a href="http://www.savacommission.org/" target="_blank"> Međunarodna komisija za sliv rijeke Save</a></li>
+                		<li><a href="http://www.jadran.ba/" target="_blank">Agencije za vodno područje Jadranskog mora</a></li>
+                	</ul>
+                </li>
+             </ul></div>
+         	  <div class="spacer-small"></div>
+        	</div>
+      	</div>
+      </div>
+   
+      
+      <div class="clearer"></div>
+      <div class="spacer"></div>
+ 	  <div id="footer"></div>
+  </div>
+</div>
+</div>
+
+</body>
+</html>

@@ -62,6 +62,22 @@ export type Trend = 'rising' | 'falling' | 'steady' | 'unknown'
  * i tačan broj, pa korisnik sam vidi je li promjena od 0.2 cm bitna.
  */
 export function trendOf(properties: ReachProperties): Trend {
+  // Trend koji je izvor **objavio** ima prednost nad našim izvodom iz dva očitanja.
+  // FHMZBIH ga objavljuje; tvrdnja agencije je jača od našeg računa (zlatno pravilo 3).
+  switch (properties.publishedTrend) {
+    case 'Rising':
+      return 'rising'
+    case 'Falling':
+      return 'falling'
+    case 'Steady':
+      return 'steady'
+    case 'Unknown':
+      // Izvor je poslao oznaku koju ne prepoznajemo. To nije "nema promjene".
+      return 'unknown'
+    default:
+      break
+  }
+
   const change = properties.changeCm
   if (change === null || change === undefined) return 'unknown'
   if (change > 0) return 'rising'

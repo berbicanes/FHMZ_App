@@ -20,14 +20,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/geojson/avpjm": {
+    "/api/v1/geojson/points/{sourceId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["GetAvpjm"];
+        get: operations["GetPointSource"];
         put?: never;
         post?: never;
         delete?: never;
@@ -205,6 +205,8 @@ export interface components {
             changeCm?: number | null;
             /** Format: int64 */
             changeOverMinutes?: number | null;
+            publishedTrend?: string | null;
+            publishedTrendLabel?: string | null;
             agencyName: string | null;
             agencyUrl: string | null;
             sourceUrl?: string | null;
@@ -303,11 +305,13 @@ export interface operations {
             };
         };
     };
-    GetAvpjm: {
+    GetPointSource: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                sourceId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;

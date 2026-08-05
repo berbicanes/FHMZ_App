@@ -18,9 +18,17 @@ const ENTRIES = [
  * ima samo razlika između "izmjereno" i "nema podatka". Plava je birana tako da se ne
  * pomiješa sa skalom AVP Save; ista nijansa bi tvrdila nešto što agencija nije rekla.
  */
-export function AvpjmLegend({ agencyName }: { agencyName: string }) {
+export function PointSourceLegend({
+  agencyName,
+  color,
+  note,
+}: {
+  agencyName: string
+  color: string
+  note: string
+}) {
   return (
-    <section aria-label="Legenda Jadranskog sliva">
+    <section aria-label={`Legenda — ${agencyName}`}>
       <h2 className="mb-2 text-xs font-semibold tracking-wide text-[--color-text-muted] uppercase">
         Legenda — {agencyName}
       </h2>
@@ -30,7 +38,7 @@ export function AvpjmLegend({ agencyName }: { agencyName: string }) {
           <span
             aria-hidden="true"
             className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/40"
-            style={{ backgroundColor: '#4a8fd4' }}
+            style={{ backgroundColor: color }}
           />
           <span>Izmjereno, bez ocjene opasnosti</span>
         </li>
@@ -48,11 +56,7 @@ export function AvpjmLegend({ agencyName }: { agencyName: string }) {
         </li>
       </ul>
 
-      <p className="mt-3 text-xs leading-relaxed text-[--color-text-muted]">
-        Ova agencija objavljuje vodostaj, ali ne i ocjenu opasnosti — bojenje po pragovima im
-        je na sajtu dostupno samo prijavljenim korisnicima. Prikazujemo brojeve i pragove
-        onako kako ih objavljuju, bez vlastite ocjene.
-      </p>
+      <p className="mt-3 text-xs leading-relaxed text-[--color-text-muted]">{note}</p>
     </section>
   )
 }

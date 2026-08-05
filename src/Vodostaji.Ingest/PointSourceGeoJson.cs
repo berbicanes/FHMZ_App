@@ -4,15 +4,25 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Vodostaji.Core;
 
-namespace Vodostaji.Ingest.Avpjm;
+namespace Vodostaji.Ingest;
+
+/// <summary>Legenda jednog izvora. Svaki je donosi svoju.</summary>
+public interface ISourceLegend
+{
+    string Color(StationReading reading);
+
+    string Label(StationReading reading);
+}
 
 /// <summary>
-/// Gradi GeoJSON sloj AVPJM-a — tačke, ne poligoni.
+/// Gradi GeoJSON sloj od tačaka.
 ///
-/// Zaseban graditelj, zaseban fajl, zasebna legenda. Dionice AVP Save i stanice AVPJM-a se
-/// nikad ne stapaju: jug mora izgledati kao jug, sa svojom pričom o tome šta se zna a šta ne.
+/// Dijele ga izvori koji objavljuju stanice a ne dionice. **Dijeljenje koda nije stapanje
+/// slojeva:** svaki izvor prosljeđuje vlastitu <see cref="ISourceLegend"/>, ide u vlastiti
+/// fajl i crta se kao vlastiti sloj. Zajednički graditelj samo sprječava da se dva skoro
+/// ista koda vremenom raziđu.
 /// </summary>
-public static class AvpjmStationGeoJson
+public static class PointSourceGeoJson
 {
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -23,6 +33,7 @@ public static class AvpjmStationGeoJson
 
     public static string Build(
         SourceFetchResult result,
+        ISourceLegend legend,
         DateTimeOffset now,
         IReadOnlyDictionary<string, PreviousMeasurement>? previousByKey = null)
     {
@@ -33,6 +44,7 @@ public static class AvpjmStationGeoJson
         {
             if (reading.Station.Coordinates is not { } coordinates)
             {
+                // Stanica bez koordinata ne može na mapu, ali se broji i objavljuje.
                 withoutCoordinates++;
                 continue;
             }
@@ -43,11 +55,11 @@ public static class AvpjmStationGeoJson
                 ["geometry"] = new JsonObject
                 {
                     ["type"] = "Point",
-                    // GeoJSON traži lon pa lat — obrnuto od `location` polja izvora.
+                    // GeoJSON traži lon pa lat.
                     ["coordinates"] = new JsonArray(coordinates.Longitude, coordinates.Latitude),
                 },
                 ["properties"] = JsonSerializer.SerializeToNode(
-                    Properties(reading, result.FetchedAt, now, Previous(previousByKey, reading)),
+                    Properties(reading, legend, result.FetchedAt, now, Previous(previousByKey, reading)),
                     Options),
             });
         }
@@ -80,13 +92,16 @@ public static class AvpjmStationGeoJson
 
     private static ReachProperties Properties(
         StationReading reading,
+        ISourceLegend legend,
         DateTimeOffset fetchedAt,
         DateTimeOffset now,
         PreviousMeasurement? previous)
     {
         var measurement = reading.Measurement;
         var age = measurement?.AgeAt(now);
-        var hasMeasurement = measurement is not null;
+
+        // Trend koji izvor objavljuje ima prednost nad našim izvodom iz dva očitanja.
+        var published = (reading as StationReading.Measured)?.Trend;
 
         return new ReachProperties
         {
@@ -95,12 +110,10 @@ public static class AvpjmStationGeoJson
             Name = reading.Station.Name,
             River = reading.Station.River,
 
-            // Uvijek `Unknown` — agencija stupanj ne objavljuje (SOURCES.md §2.1).
             Level = reading.Level.ToString(),
-            LevelLabel = AvpjmLegend.Label(hasMeasurement),
-            Color = AvpjmLegend.Color(reading.Level, hasMeasurement),
+            LevelLabel = legend.Label(reading),
+            Color = legend.Color(reading),
 
-            // Izvor ne šalje tekst statusa, pa je prazan string ovdje istina.
             StatusLabelOriginal = reading.StatusLabelOriginal,
 
             ValueCm = measurement?.ValueCm,
@@ -114,14 +127,17 @@ public static class AvpjmStationGeoJson
                 ? Math.Round(missed, 2)
                 : null,
 
-            PreviousValueCm = hasMeasurement ? previous?.ValueCm : null,
-            PreviousMeasuredAt = hasMeasurement ? previous?.MeasuredAt : null,
+            PreviousValueCm = measurement is null ? null : previous?.ValueCm,
+            PreviousMeasuredAt = measurement is null ? null : previous?.MeasuredAt,
             ChangeCm = measurement is not null && previous is not null
                 ? measurement.ValueCm - previous.ValueCm
                 : null,
             ChangeOverMinutes = measurement is not null && previous is not null
                 ? (long)Math.Round((measurement.MeasuredAt - previous.MeasuredAt).TotalMinutes)
                 : null,
+
+            PublishedTrend = published?.Direction.ToString(),
+            PublishedTrendLabel = published?.LabelOriginal,
 
             AgencyName = reading.Station.Attribution.AgencyName,
             AgencyUrl = reading.Station.Attribution.AgencyUrl.ToString(),
