@@ -57,11 +57,11 @@ describe('matches', () => {
   })
 })
 
-const reach = (name: string, river: string | null): ReachProperties =>
-  ({ name, river, stationKey: name, levelLabel: 'Normalno' }) as unknown as ReachProperties
+const reach = (name: string, river: string | null, sourceId = 'avp-sava'): ReachProperties =>
+  ({ name, river, sourceId, stationKey: name, levelLabel: 'Normalno' }) as unknown as ReachProperties
 
 const station = (name: string, location: string | null): StationProperties =>
-  ({ name, location, stationKey: name }) as unknown as StationProperties
+  ({ name, location, sourceId: 'avp-sava', stationKey: name }) as unknown as StationProperties
 
 describe('searchReaches', () => {
   const reaches = [
@@ -81,6 +81,14 @@ describe('searchReaches', () => {
 
   it('prazan upit ne vraća sve nego ništa', () => {
     expect(searchReaches(reaches, '   ')).toEqual([])
+  })
+
+  it('rezultat nosi izvor, jer ključ nije globalan', () => {
+    // Bez izvora bi dionica `1` kod AVP Save i stanica `1` kod AVPJM-a bile ista stvar.
+    const mixed = [reach('Mostar', 'Neretva', 'avpjm'), reach('Bosna-Mostar', 'Bosna')]
+    const hits = searchReaches(mixed, 'mostar')
+
+    expect(hits.map((h) => h.sourceId).sort()).toEqual(['avp-sava', 'avpjm'])
   })
 })
 

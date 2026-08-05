@@ -49,6 +49,8 @@ public sealed class SourceIngestRunner
     private string? _lastFailureReason;
     private int _knownCount;
     private int _unknownCount;
+    private int _measuredCount;
+    private int _withoutMeasurementCount;
 
     public SourceIngestRunner(
         IStationDataSource source,
@@ -81,6 +83,8 @@ public sealed class SourceIngestRunner
         LastFailureReason = _lastFailureReason,
         KnownCount = _knownCount,
         UnknownCount = _unknownCount,
+        MeasuredCount = _measuredCount,
+        WithoutMeasurementCount = _withoutMeasurementCount,
         ClockEvidence = _source.Clock.Evidence,
     };
 
@@ -142,6 +146,8 @@ public sealed class SourceIngestRunner
         LastSuccessfulResult = toStore;
         _knownCount = toStore.KnownCount;
         _unknownCount = toStore.UnknownCount;
+        _measuredCount = toStore.MeasuredCount;
+        _withoutMeasurementCount = toStore.WithoutMeasurementCount;
 
         return IngestOutcome.Succeeded;
     }

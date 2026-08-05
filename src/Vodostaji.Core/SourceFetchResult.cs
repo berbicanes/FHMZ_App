@@ -30,7 +30,18 @@ public sealed record SourceFetchResult
 
     public bool Succeeded => FailureReason is null;
 
+    /// <summary>
+    /// Koliko stanica ima **ocjenu opasnosti**. Nije isto što i broj mjerenja: AVPJM daje
+    /// 20 vrijednosti i nijednu ocjenu, jer stupanj ne objavljuje javnosti (SOURCES.md §2.1).
+    /// Dok su postojala samo dva izvora sa istim ponašanjem, razlika se nije vidjela.
+    /// </summary>
     public int KnownCount => Readings.Count(r => r.Level.IsKnown());
 
     public int UnknownCount => Readings.Count(r => !r.Level.IsKnown());
+
+    /// <summary>Koliko stanica ima **izmjerenu vrijednost**, bez obzira na ocjenu.</summary>
+    public int MeasuredCount => Readings.Count(r => r.Measurement is not null);
+
+    /// <summary>Koliko ih je bez ijedne vrijednosti.</summary>
+    public int WithoutMeasurementCount => Readings.Count(r => r.Measurement is null);
 }

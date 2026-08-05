@@ -39,6 +39,8 @@ export function matches(haystack: string | null | undefined, needle: string): bo
 
 export interface SearchHit {
   kind: 'reach' | 'station'
+  /** Ključ je jedinstven samo unutar izvora, pa rezultat nosi oba. */
+  sourceId: string
   key: string
   title: string
   subtitle: string | null
@@ -52,6 +54,7 @@ export function searchReaches(reaches: ReachProperties[], query: string): Search
     .filter((reach) => [reach.name, reach.river].some((f) => matches(f, needle)))
     .map((reach) => ({
       kind: 'reach' as const,
+      sourceId: reach.sourceId ?? '',
       key: reach.stationKey ?? '',
       title: reach.name ?? '',
       subtitle: reach.levelLabel ?? null,
@@ -66,6 +69,7 @@ export function searchStations(stations: StationProperties[], query: string): Se
     .filter((station) => [station.name, station.location].some((f) => matches(f, needle)))
     .map((station) => ({
       kind: 'station' as const,
+      sourceId: station.sourceId ?? '',
       key: station.stationKey ?? '',
       title: station.name ?? '',
       subtitle: station.location ?? null,

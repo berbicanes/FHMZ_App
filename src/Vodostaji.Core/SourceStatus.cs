@@ -38,11 +38,21 @@ public sealed record SourceStatus
 
     public string? LastFailureReason { get; init; }
 
-    /// <summary>Koliko stanica je u zadnjem uspješnom povlačenju imalo podatak.</summary>
+    /// <summary>
+    /// Koliko stanica je imalo **ocjenu opasnosti** u zadnjem uspješnom povlačenju.
+    /// Kod AVPJM-a je ovo nula i kad sve stanice mjere — agencija stupanj ne objavljuje.
+    /// </summary>
     public int KnownCount { get; init; }
 
-    /// <summary>Koliko ih je bilo bez podatka. Ovo se prikazuje, ne skriva.</summary>
+    /// <summary>Koliko ih je bilo bez ocjene. Ovo se prikazuje, ne skriva.</summary>
     public int UnknownCount { get; init; }
+
+    /// <summary>Koliko ih je imalo **izmjerenu vrijednost**. Razlika u odnosu na
+    /// <see cref="KnownCount"/> je razlika između "ne znamo koliko je vode" i
+    /// "znamo koliko je vode, ali ne i šta to znači".</summary>
+    public int MeasuredCount { get; init; }
+
+    public int WithoutMeasurementCount { get; init; }
 
     /// <summary>Dokaz za pretpostavku o vremenskoj zoni, iz <see cref="SourceClock.Evidence"/>.
     /// Ide u API da bi bilo javno provjerljivo šta smo pretpostavili i zašto.</summary>

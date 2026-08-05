@@ -16,8 +16,8 @@ export function Search({
 }: {
   reaches: ReachProperties[]
   stations: StationProperties[]
-  onOpenReach: (key: string) => void
-  onOpenStation: (key: string) => void
+  onOpenReach: (sourceId: string, key: string) => void
+  onOpenStation: (sourceId: string, key: string) => void
 }) {
   const [query, setQuery] = useState('')
   const inputId = useId()
@@ -26,7 +26,9 @@ export function Search({
   const stationHits = useMemo(() => searchStations(stations, query), [stations, query])
 
   const open = (hit: SearchHit) =>
-    hit.kind === 'reach' ? onOpenReach(hit.key) : onOpenStation(hit.key)
+    hit.kind === 'reach'
+      ? onOpenReach(hit.sourceId, hit.key)
+      : onOpenStation(hit.sourceId, hit.key)
 
   return (
     <section aria-label="Pretraga">

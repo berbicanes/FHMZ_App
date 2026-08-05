@@ -84,10 +84,23 @@ posao; zapisano da se zna da je izbor, ne previd.
 
 Prvi put dva izvora u istoj mapi. **Ovdje se testira sav rad oko nejednake gustine i frekvencije** — ako je nešto pogrešno u modelu, ovdje puca.
 
-- [ ] `AvpjmScrapeSource` (AngleSharp)
-- [ ] Zaseban layer sa zasebnom legendom
-- [ ] `/api/v1/sources` sa statusom po izvoru, vidljiv u UI-u
-- [ ] Vizuelna provjera: da li jug izgleda "prazan" ili "bez podatka"
+- [x] `AvpjmSource` (AngleSharp) — 20 stanica iz jednog zahtjeva
+- [x] Zaseban layer sa zasebnom legendom
+- [x] `/api/v1/sources` sa statusom po izvoru, vidljiv u UI-u
+- [ ] **Vizuelna provjera: da li jug izgleda "prazan" ili "bez podatka".** Traži ljudske oči.
+
+**Model je pukao na dva mjesta, tačno kako je ova faza i predviđala:**
+
+1. **`KnownCount` je značio dvije stvari.** Kod AVP Save "ima ocjenu" i "ima mjerenje" se
+   poklapaju, pa se razlika nije vidjela. AVPJM daje 20 mjerenja i **nula ocjena**, i ista
+   riječ je počela značiti suprotno u dva odgovora. Razdvojeno u `MeasuredCount` i `KnownCount`.
+2. **Ruta je tretirala ključ kao globalan.** AVP Sava ima dionicu `1`, AVPJM ima stanicu `1`;
+   `/dionica/1` je otvarao Sanu, a Mostar je bio nedostupan deep linkom. Domenski model je
+   cijelo vrijeme govorio da ključ vrijedi samo unutar izvora — ruta ga nije slušala.
+   Sada je `/dionica/{izvor}/{ključ}`.
+
+**Ispravka iz Faze 0:** tvrdnja da lista AVPJM-a nema podatke bila je pogrešna, vidi
+SOURCES.md §2.
 
 ---
 

@@ -26,6 +26,26 @@
         }
       }
     },
+    "/api/v1/geojson/avpjm": {
+      "get": {
+        "tags": [
+          "Vodostaji.Api"
+        ],
+        "operationId": "GetAvpjm",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReachFeatureCollection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/geojson/stations": {
       "get": {
         "tags": [
@@ -261,6 +281,7 @@
           "fetchedAt",
           "generatedAt",
           "knownCount",
+          "measuredCount",
           "reachCount",
           "sourceId",
           "unknownCount",
@@ -289,6 +310,10 @@
             "format": "int32"
           },
           "unknownCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "measuredCount": {
             "type": "integer",
             "format": "int32"
           },
@@ -490,6 +515,14 @@
             "format": "int32"
           },
           "unknownCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "measuredCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutMeasurementCount": {
             "type": "integer",
             "format": "int32"
           },

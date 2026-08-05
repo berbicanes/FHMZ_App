@@ -11,6 +11,52 @@ const ENTRIES = [
   { color: '#e60000', label: 'Značajne poplave' },
 ] as const
 
+/**
+ * Legenda Jadranskog sliva. **Zasebna**, jer je i sloj zaseban.
+ *
+ * AVPJM ne objavljuje stupanj opasnosti javnosti, pa ovdje nema skale od zelene do crvene —
+ * ima samo razlika između "izmjereno" i "nema podatka". Plava je birana tako da se ne
+ * pomiješa sa skalom AVP Save; ista nijansa bi tvrdila nešto što agencija nije rekla.
+ */
+export function AvpjmLegend({ agencyName }: { agencyName: string }) {
+  return (
+    <section aria-label="Legenda Jadranskog sliva">
+      <h2 className="mb-2 text-xs font-semibold tracking-wide text-[--color-text-muted] uppercase">
+        Legenda — {agencyName}
+      </h2>
+
+      <ul className="space-y-1.5">
+        <li className="flex items-center gap-2.5 text-sm">
+          <span
+            aria-hidden="true"
+            className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/40"
+            style={{ backgroundColor: '#4a8fd4' }}
+          />
+          <span>Izmjereno, bez ocjene opasnosti</span>
+        </li>
+        <li className="flex items-center gap-2.5 text-sm">
+          <span
+            aria-hidden="true"
+            className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/40"
+            style={{
+              backgroundColor: '#cccccc',
+              backgroundImage:
+                'repeating-linear-gradient(45deg, #5c6470 0 2px, transparent 2px 5px)',
+            }}
+          />
+          <span>Nema podatka</span>
+        </li>
+      </ul>
+
+      <p className="mt-3 text-xs leading-relaxed text-[--color-text-muted]">
+        Ova agencija objavljuje vodostaj, ali ne i ocjenu opasnosti — bojenje po pragovima im
+        je na sajtu dostupno samo prijavljenim korisnicima. Prikazujemo brojeve i pragove
+        onako kako ih objavljuju, bez vlastite ocjene.
+      </p>
+    </section>
+  )
+}
+
 export function Legend({ agencyName }: { agencyName: string }) {
   return (
     <section aria-label="Legenda">

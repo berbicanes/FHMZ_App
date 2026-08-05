@@ -8,7 +8,7 @@ import type {
   StationProperties,
 } from './api/types'
 import { DisclaimerBar, PersistentDisclaimer } from './components/DisclaimerBar'
-import { Legend } from './components/Legend'
+import { AvpjmLegend, Legend } from './components/Legend'
 import { ReachDetail } from './components/ReachDetail'
 import { ReachMap } from './components/ReachMap'
 import { ReachTable } from './components/ReachTable'
@@ -46,15 +46,28 @@ export default function App() {
     staleTime: 60 * 60 * 1000,
   })
 
+  // Jadranski sliv — zaseban upit za zaseban sloj.
+  const avpjm = useQuery({
+    queryKey: ['avpjm'],
+    queryFn: () => fetchJson<ReachCollection>('/api/v1/geojson/avpjm'),
+    refetchInterval: 5 * 60 * 1000,
+  })
+
   const sources = useQuery({
     queryKey: ['sources'],
     queryFn: () => fetchJson<SourceStatus[]>('/api/v1/sources'),
     refetchInterval: 5 * 60 * 1000,
   })
 
+  // Dionice i tačke Jadrana idu u istu listu za pretragu i tabelu, ali **nikad u isti
+  // sloj na mapi**. Korisnik iz Mostara traži "Mostar" i mora ga naći; to nije stapanje
+  // legendi nego jedan indeks nad dva sloja.
   const reachProperties = useMemo(
-    () => reaches.data?.features.map((f) => f.properties) ?? [],
-    [reaches.data],
+    () => [
+      ...(reaches.data?.features.map((f) => f.properties) ?? []),
+      ...(avpjm.data?.features.map((f) => f.properties) ?? []),
+    ],
+    [reaches.data, avpjm.data],
   )
   const stationProperties = useMemo(
     () => stations.data?.features.map((f) => f.properties) ?? [],
@@ -65,12 +78,16 @@ export default function App() {
   // otvara isto što je pošiljalac gledao (UI.md §4).
   const selectedReach: ReachProperties | null =
     route.kind === 'reach'
-      ? (reachProperties.find((r) => r.stationKey === route.key) ?? null)
+      ? (reachProperties.find(
+          (r) => r.stationKey === route.key && r.sourceId === route.sourceId,
+        ) ?? null)
       : null
 
   const selectedStation: StationProperties | null =
     route.kind === 'station'
-      ? (stationProperties.find((s) => s.stationKey === route.key) ?? null)
+      ? (stationProperties.find(
+          (s) => s.stationKey === route.key && s.sourceId === route.sourceId,
+        ) ?? null)
       : null
 
   // Naslov kartice prati ono što je otvoreno — link dijeljen u poruci nosi ime dionice.
@@ -80,7 +97,6 @@ export default function App() {
   }, [selectedReach, selectedStation])
 
   const meta = reaches.data?.meta
-  const source = sources.data?.[0]
 
   // Ruta koja pokazuje na nešto što ne postoji nije prazan ekran nego objašnjenje.
   const missingTarget =
@@ -101,7 +117,7 @@ export default function App() {
         </button>
         {meta && (
           <p className="text-xs text-[--color-text-muted]">
-            {meta.knownCount} od {meta.reachCount} dionica ima podatak · povučeno{' '}
+            {meta.measuredCount} od {meta.reachCount} dionica ima podatak · povučeno{' '}
             {formatMeasuredAt(meta.fetchedAt) ?? '—'}
           </p>
         )}
@@ -131,11 +147,22 @@ export default function App() {
 
           <ReachMap
             data={reaches.data}
+            avpjm={avpjm.data}
             stations={stations.data}
             showStations={showStations || route.kind === 'station'}
-            onSelect={(reach) => navigate({ kind: 'reach', key: reach.stationKey ?? '' })}
+            onSelect={(reach) =>
+              navigate({
+                kind: 'reach',
+                sourceId: reach.sourceId ?? '',
+                key: reach.stationKey ?? '',
+              })
+            }
             onSelectStation={(station) =>
-              navigate({ kind: 'station', key: station.stationKey ?? '' })
+              navigate({
+                kind: 'station',
+                sourceId: station.sourceId ?? '',
+                key: station.stationKey ?? '',
+              })
             }
           />
 
@@ -188,31 +215,49 @@ export default function App() {
             <Search
               reaches={reachProperties}
               stations={stationProperties}
-              onOpenReach={(key) => navigate({ kind: 'reach', key })}
-              onOpenStation={(key) => {
+              onOpenReach={(sourceId, key) => navigate({ kind: 'reach', sourceId, key })}
+              onOpenStation={(sourceId, key) => {
                 setShowStations(true)
-                navigate({ kind: 'station', key })
+                navigate({ kind: 'station', sourceId, key })
               }}
             />
 
-            {source && <Legend agencyName={source.agencyName ?? 'izvor'} />}
+            {sources.data?.map((s) =>
+              s.sourceId === 'avpjm' ? (
+                <AvpjmLegend key={s.sourceId} agencyName={s.agencyName ?? 'izvor'} />
+              ) : (
+                <Legend key={s.sourceId} agencyName={s.agencyName ?? 'izvor'} />
+              ),
+            )}
 
-            {source && (
+            {sources.data && sources.data.length > 0 && (
               <section aria-label="Stanje izvora" className="text-xs text-[--color-text-muted]">
-                <h2 className="mb-1 font-semibold tracking-wide uppercase">Izvor</h2>
-                <p>
-                  {source.agencyName} ·{' '}
-                  {source.isHealthy
-                    ? 'dostupan'
-                    : `nedostupan (${source.lastFailureReason ?? '—'})`}
-                </p>
-                {/* Pretpostavka o vremenskoj zoni je javno provjerljiva, ne skrivena. */}
-                {source.clockEvidence && (
-                  <details className="mt-1">
-                    <summary className="cursor-pointer">O vremenu mjerenja</summary>
-                    <p className="mt-1 leading-relaxed">{source.clockEvidence}</p>
-                  </details>
-                )}
+                <h2 className="mb-1 font-semibold tracking-wide uppercase">Izvori</h2>
+                <ul className="space-y-2">
+                  {sources.data.map((s) => (
+                    <li key={s.sourceId}>
+                      <p>
+                        {s.agencyName} ·{' '}
+                        {s.isHealthy
+                          ? 'dostupan'
+                          : `nedostupan (${s.lastFailureReason ?? '—'})`}
+                      </p>
+                      {/* Razlika između "mjeri" i "ocjenjuje" je cijela priča o ovom izvoru. */}
+                      <p>
+                        {s.measuredCount} mjerenja ·{' '}
+                        {s.knownCount === 0
+                          ? 'bez ocjene opasnosti'
+                          : `${s.knownCount} sa ocjenom`}
+                      </p>
+                      {s.clockEvidence && (
+                        <details className="mt-1">
+                          <summary className="cursor-pointer">O vremenu mjerenja</summary>
+                          <p className="mt-1 leading-relaxed">{s.clockEvidence}</p>
+                        </details>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </section>
             )}
 
@@ -244,7 +289,13 @@ export default function App() {
             </h2>
             <ReachTable
               reaches={reachProperties}
-              onSelect={(reach) => navigate({ kind: 'reach', key: reach.stationKey ?? '' })}
+              onSelect={(reach) =>
+              navigate({
+                kind: 'reach',
+                sourceId: reach.sourceId ?? '',
+                key: reach.stationKey ?? '',
+              })
+            }
             />
           </section>
         </div>

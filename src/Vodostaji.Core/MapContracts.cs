@@ -106,9 +106,14 @@ public sealed record ReachMeta
 
     public required int ReachCount { get; init; }
 
+    /// <summary>Sa ocjenom opasnosti.</summary>
     public required int KnownCount { get; init; }
 
+    /// <summary>Bez ocjene opasnosti.</summary>
     public required int UnknownCount { get; init; }
+
+    /// <summary>Sa izmjerenom vrijednošću. Kod AVPJM-a je 20 uz `KnownCount` nula.</summary>
+    public required int MeasuredCount { get; init; }
 
     public required int WithoutGeometry { get; init; }
 }

@@ -4,51 +4,48 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Vodostaji.Core;
 
-namespace Vodostaji.Ingest.AvpSava;
+namespace Vodostaji.Ingest.Avpjm;
 
 /// <summary>
-/// Gradi GeoJSON koji mapa crta.
+/// Gradi GeoJSON sloj AVPJM-a — tačke, ne poligoni.
 ///
-/// Namjerno je vezan za jedan izvor. Sljedeći izvor dobija svoj graditelj i svoj sloj, jer
-/// stapanje agencija u jedan sloj sa jednom legendom je zabranjeno — jug mape mora izgledati
-/// kao jug bez podatka, ne kao dio iste priče.
-///
-/// Svojstva se sklapaju u <see cref="ReachProperties"/> pa serijalizuju. Taj tip je jedini
-/// izvor istine: iz njega ide OpenAPI shema, a iz nje TypeScript tipovi.
+/// Zaseban graditelj, zaseban fajl, zasebna legenda. Dionice AVP Save i stanice AVPJM-a se
+/// nikad ne stapaju: jug mora izgledati kao jug, sa svojom pričom o tome šta se zna a šta ne.
 /// </summary>
-public static class AvpSavaReachGeoJson
+public static class AvpjmStationGeoJson
 {
     private static readonly JsonSerializerOptions Options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.Never,
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        WriteIndented = false,
     };
 
     public static string Build(
         SourceFetchResult result,
-        IReadOnlyDictionary<string, string> geometryByKey,
         DateTimeOffset now,
         IReadOnlyDictionary<string, PreviousMeasurement>? previousByKey = null)
     {
         var features = new JsonArray();
-        var withoutGeometry = 0;
+        var withoutCoordinates = 0;
 
         foreach (var reading in result.Readings)
         {
-            if (!geometryByKey.TryGetValue(reading.Station.StationKey, out var geometry))
+            if (reading.Station.Coordinates is not { } coordinates)
             {
-                withoutGeometry++;
+                withoutCoordinates++;
                 continue;
             }
 
             features.Add(new JsonObject
             {
                 ["type"] = "Feature",
-                // Geometrija se ubacuje kao već serijalizovan tekst — poligon koji prođe
-                // kroz naš model pa se ponovo ispiše je poligon koji smo mi prepisali.
-                ["geometry"] = JsonNode.Parse(geometry),
+                ["geometry"] = new JsonObject
+                {
+                    ["type"] = "Point",
+                    // GeoJSON traži lon pa lat — obrnuto od `location` polja izvora.
+                    ["coordinates"] = new JsonArray(coordinates.Longitude, coordinates.Latitude),
+                },
                 ["properties"] = JsonSerializer.SerializeToNode(
                     Properties(reading, result.FetchedAt, now, Previous(previousByKey, reading)),
                     Options),
@@ -64,24 +61,21 @@ public static class AvpSavaReachGeoJson
             KnownCount = result.KnownCount,
             UnknownCount = result.UnknownCount,
             MeasuredCount = result.MeasuredCount,
-            WithoutGeometry = withoutGeometry,
+            WithoutGeometry = withoutCoordinates,
         };
 
-        var collection = new JsonObject
+        return new JsonObject
         {
             ["type"] = "FeatureCollection",
             ["meta"] = JsonSerializer.SerializeToNode(meta, Options),
             ["features"] = features,
-        };
-
-        return collection.ToJsonString(Options);
+        }.ToJsonString(Options);
     }
 
     private static PreviousMeasurement? Previous(
         IReadOnlyDictionary<string, PreviousMeasurement>? previousByKey, StationReading reading) =>
-        previousByKey is not null &&
-        previousByKey.TryGetValue(reading.Station.StationKey, out var previous)
-            ? previous
+        previousByKey is not null && previousByKey.TryGetValue(reading.Station.StationKey, out var p)
+            ? p
             : null;
 
     private static ReachProperties Properties(
@@ -92,6 +86,7 @@ public static class AvpSavaReachGeoJson
     {
         var measurement = reading.Measurement;
         var age = measurement?.AgeAt(now);
+        var hasMeasurement = measurement is not null;
 
         return new ReachProperties
         {
@@ -100,12 +95,12 @@ public static class AvpSavaReachGeoJson
             Name = reading.Station.Name,
             River = reading.Station.River,
 
+            // Uvijek `Unknown` — agencija stupanj ne objavljuje (SOURCES.md §2.1).
             Level = reading.Level.ToString(),
-            LevelLabel = AvpSavaLegend.Label(reading.Level),
-            Color = AvpSavaLegend.Color(reading.Level),
+            LevelLabel = AvpjmLegend.Label(hasMeasurement),
+            Color = AvpjmLegend.Color(reading.Level, hasMeasurement),
 
-            // Doslovni tekst agencije putuje do browsera. Bez njega korisniku možemo
-            // pokazati samo naš prevod njihove tvrdnje.
+            // Izvor ne šalje tekst statusa, pa je prazan string ovdje istina.
             StatusLabelOriginal = reading.StatusLabelOriginal,
 
             ValueCm = measurement?.ValueCm,
@@ -115,18 +110,12 @@ public static class AvpSavaReachGeoJson
             AgeMinutes = age is null ? null : (long)Math.Round(age.Value.TotalMinutes),
             ExpectedIntervalMinutes = (long)reading.Station.ExpectedInterval.TotalMinutes,
             PublicationLagMinutes = (long)reading.Station.TypicalPublicationLag.TotalMinutes,
-
-            // Broj propuštenih ciklusa, mjeren od trenutka kad je podatak realno mogao stići.
-            // UI.md §2 dijeli prikaz na <1×, 1–3× i >3×, pa mu se daje broj umjesto gotove
-            // ocjene — prag prikaza je odluka UI-a.
             AgeRatio = reading.Station.MissedCycles(measurement?.MeasuredAt, now) is { } missed
                 ? Math.Round(missed, 2)
                 : null,
 
-            // Trend se izvodi iz dva očitanja, pa uz razliku ide i period preko kojeg je
-            // mjerena. Razlika bez perioda pogrešno sugeriše brzinu promjene.
-            PreviousValueCm = measurement is null ? null : previous?.ValueCm,
-            PreviousMeasuredAt = measurement is null ? null : previous?.MeasuredAt,
+            PreviousValueCm = hasMeasurement ? previous?.ValueCm : null,
+            PreviousMeasuredAt = hasMeasurement ? previous?.MeasuredAt : null,
             ChangeCm = measurement is not null && previous is not null
                 ? measurement.ValueCm - previous.ValueCm
                 : null,
@@ -134,7 +123,6 @@ public static class AvpSavaReachGeoJson
                 ? (long)Math.Round((measurement.MeasuredAt - previous.MeasuredAt).TotalMinutes)
                 : null,
 
-            // Atribucija po dionici, ne u footeru (LEGAL.md §2.1).
             AgencyName = reading.Station.Attribution.AgencyName,
             AgencyUrl = reading.Station.Attribution.AgencyUrl.ToString(),
             SourceUrl = reading.Station.Attribution.SourceUrl?.ToString(),

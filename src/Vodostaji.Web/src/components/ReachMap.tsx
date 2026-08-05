@@ -42,13 +42,21 @@ const BASEMAP: StyleSpecification = {
 
 interface Props {
   data: ReachCollection | undefined
+  avpjm: ReachCollection | undefined
   stations: StationCollection | undefined
   showStations: boolean
   onSelect: (properties: ReachProperties) => void
   onSelectStation: (properties: StationProperties) => void
 }
 
-export function ReachMap({ data, stations, showStations, onSelect, onSelectStation }: Props) {
+export function ReachMap({
+  data,
+  avpjm,
+  stations,
+  showStations,
+  onSelect,
+  onSelectStation,
+}: Props) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
   const onSelectRef = useRef(onSelect)
@@ -129,6 +137,43 @@ export function ReachMap({ data, stations, showStations, onSelect, onSelectStati
         },
       })
 
+      // Jadranski sliv — **zaseban izvor i zaseban sloj**. Nikad stopljen sa dionicama:
+      // AVP Sava daje ocjenu opasnosti, AVPJM je ne daje, i jedna legenda za oboje bi
+      // morala izmisliti nešto za jednu od agencija (CLAUDE.md → Šta NE raditi).
+      instance.addSource('avpjm', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+
+      instance.addLayer({
+        id: 'avpjm-points',
+        type: 'circle',
+        source: 'avpjm',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4, 10, 8],
+          'circle-color': ['get', 'color'],
+          'circle-stroke-color': '#0d1117',
+          'circle-stroke-width': 1,
+          'circle-opacity': [
+            'case',
+            ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,
+            ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
+            0.9,
+          ],
+        },
+      })
+
+      instance.on('click', 'avpjm-points', (event) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined
+        if (feature) onSelectRef.current(feature.properties as unknown as ReachProperties)
+      })
+      instance.on('mouseenter', 'avpjm-points', () => {
+        instance.getCanvas().style.cursor = 'pointer'
+      })
+      instance.on('mouseleave', 'avpjm-points', () => {
+        instance.getCanvas().style.cursor = ''
+      })
+
       instance.addSource('stations', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -198,6 +243,19 @@ export function ReachMap({ data, stations, showStations, onSelect, onSelectStati
     if (instance.isStyleLoaded()) apply()
     else instance.once('load', apply)
   }, [data])
+
+  useEffect(() => {
+    const instance = map.current
+    if (!instance || !avpjm) return
+
+    const apply = () => {
+      const source = instance.getSource('avpjm') as GeoJSONSource | undefined
+      source?.setData(avpjm)
+    }
+
+    if (instance.isStyleLoaded()) apply()
+    else instance.once('load', apply)
+  }, [avpjm])
 
   useEffect(() => {
     const instance = map.current

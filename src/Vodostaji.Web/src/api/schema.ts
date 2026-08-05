@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/geojson/avpjm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetAvpjm"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/geojson/stations": {
         parameters: {
             query?: never;
@@ -154,6 +170,8 @@ export interface components {
             /** Format: int32 */
             unknownCount: number;
             /** Format: int32 */
+            measuredCount: number;
+            /** Format: int32 */
             withoutGeometry: number;
         };
         ReachProperties: {
@@ -215,6 +233,10 @@ export interface components {
             knownCount?: number;
             /** Format: int32 */
             unknownCount?: number;
+            /** Format: int32 */
+            measuredCount?: number;
+            /** Format: int32 */
+            withoutMeasurementCount?: number;
             clockEvidence: string | null;
             readonly isHealthy?: boolean;
         };
@@ -262,6 +284,26 @@ export interface components {
 export type $defs = Record<string, never>;
 export interface operations {
     GetReaches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geo+json": components["schemas"]["ReachFeatureCollection"];
+                };
+            };
+        };
+    };
+    GetAvpjm: {
         parameters: {
             query?: never;
             header?: never;
