@@ -8,6 +8,7 @@ import {
   trendLabel,
   trendOf,
 } from '../lib/freshness'
+import { unusualChange } from '../lib/unusual'
 import { lazy, Suspense } from 'react'
 
 /**
@@ -36,6 +37,7 @@ export function ReachDetail({
 }) {
   const freshness = freshnessOf(reach)
   const measured = formatMeasuredAt(reach.measuredAt)
+  const unusual = unusualChange(reach)
 
   return (
     <aside
@@ -156,6 +158,17 @@ export function ReachDetail({
             Pragove definiše {reach.thresholdsDefinedBy}.
           </p>
         </section>
+      )}
+
+      {/* Činjenica, ne sud. Ne tvrdimo da je očitanje pogrešno — kažemo da je promjena veća
+          od cijelog raspona pragova koje je odredila agencija, i upućujemo na nju. */}
+      {unusual && (
+        <p className="mt-3 rounded border border-[#7a5a1a] bg-[#2a2000] p-3 text-xs leading-relaxed text-[#ffd98a]">
+          Promjena od {unusual.changeCm > 0 ? '+' : ''}
+          {unusual.changeCm} cm veća je od cijelog raspona pragova ove dionice (
+          {unusual.lowestCm}–{unusual.highestCm} cm). Vrijednost je prikazana onako kako ju je
+          objavio {reach.agencyName}; prije oslanjanja provjeri kod njih.
+        </p>
       )}
 
       {reach.stationKey && (

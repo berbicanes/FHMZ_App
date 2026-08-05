@@ -47,9 +47,8 @@ metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor š
 
 - [x] Registar stanica iz `ISV_BIH_2009_javnakarta/MapServer/1`
 - [x] Tačke stanica kao **zaseban sloj** — veze sa dionicama nema, vidi SOURCES.md §1.7
-- [~] Detalj panel po specifikaciji iz `UI.md` — strelica trenda urađena, nedostaje
-      **`Suspect` napomena** (UI.md §3); vidi napomenu o Fojničkoj ispod.
-      Protoka nema jer ga izvor ne objavljuje.
+- [x] Detalj panel po specifikaciji iz `UI.md` — strelica trenda i napomena o neuobičajenoj
+      promjeni urađene. Protoka nema jer ga izvor ne objavljuje.
 - [x] Graf 7/30 dana sa pragovima i imenom agencije koja ih definiše
 - [x] Deep linkovi — `/dionica/{SEC_ID}` i `/stanica/{HID_ID}`, bez rutera kao zavisnosti
 - [x] Pretraga po rijeci i po mjestu, neosjetljiva na dijakritiku i na `dj`/`đ`
@@ -64,10 +63,15 @@ podijeljen link otvara 404 — a deep linkovi su glavni kanal distribucije (UI.m
 gotovo sigurno nije voda nego senzor. `UI.md` §3 traži `Suspect` oznaku baš za ovo, a ona
 još ne postoji.
 
-Prag za `Suspect` je **odluka koja se ne smije olako donijeti**: previše osjetljiv prag bi
-označio stvarni poplavni talas kao sumnjiv i naveo korisnika da ga zanemari. Oznaka mora biti
-dodatna informacija uz vrijednost i status agencije, nikad zamjena za njih i nikad razlog da
-se očitanje sakrije.
+**Riješeno:** `Suspect` kao sud **nije uveden**. Umjesto njega stoji činjenična napomena, a
+mjera nije naša nego njihova — promjena se poredi sa **rasponom pragova koje je agencija
+odredila za tu dionicu**. Promjena veća od cijelog tog raspona dobija napomenu; sve unutar
+njega ne dobija ništa.
+
+Ključno svojstvo: stvarni poplavni talas unutar operativnog raspona agencije **ne** dobija
+napomenu. Provjereno: Fojnička (Δ −188 cm, raspon 120) se označava, a rast od +200 cm na
+Zenici (raspon 270) se ne označava. Dionica bez pragova ne dobija napomenu jer nemamo skalu
+s kojom bismo poredili.
 
 **Napomena:** web nema test runner. `normalise` i `matches` su provjereni ručno, ali bi
 trebali imati testove; izbor alata (Vitest?) je pitanje za dogovor jer nije u stacku.
