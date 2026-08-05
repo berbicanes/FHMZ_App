@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Map as MapLibreMap,
   NavigationControl,
@@ -63,6 +63,18 @@ export function ReachMap({
   onSelectRef.current = onSelect
   const onSelectStationRef = useRef(onSelectStation)
   onSelectStationRef.current = onSelectStation
+
+  /**
+   * Slojevi se dodaju tek kad stil bude učitan, pa podaci ne smiju biti primijenjeni prije
+   * toga. Ranije se to rješavalo sa `else instance.once('load', apply)` — i to je bio bug:
+   * `load` se emituje **jednom**. Ako bi podatak stigao nakon tog događaja a `isStyleLoaded()`
+   * na tren vratio `false`, pretplata bi čekala događaj koji se nikad više neće desiti, i
+   * podatak bi se tiho izgubio. Mapa je bila prazna, bez ijedne greške u konzoli.
+   *
+   * Zastavica u stanju je deterministična: kad se postavi, effecti se ponovo izvrše i podatak
+   * se primijeni bez obzira na to ko je stigao prvi.
+   */
+  const [layersReady, setLayersReady] = useState(false)
 
   useEffect(() => {
     if (!container.current || map.current) return
@@ -210,6 +222,8 @@ export function ReachMap({
         instance.getCanvas().style.cursor = ''
       })
 
+      setLayersReady(true)
+
       for (const layer of ['reaches-fill', 'reaches-no-data']) {
         instance.on('click', layer, (event) => {
           const feature = event.features?.[0] as MapGeoJSONFeature | undefined
@@ -228,64 +242,36 @@ export function ReachMap({
     return () => {
       instance.remove()
       map.current = null
+      setLayersReady(false)
     }
   }, [])
 
   useEffect(() => {
-    const instance = map.current
-    if (!instance || !data) return
+    if (!layersReady || !data) return
+    ;(map.current?.getSource('reaches') as GeoJSONSource | undefined)?.setData(data)
+  }, [layersReady, data])
 
-    const apply = () => {
-      const source = instance.getSource('reaches') as GeoJSONSource | undefined
-      source?.setData(data)
-    }
+  useEffect(() => {
+    if (!layersReady || !avpjm) return
+    ;(map.current?.getSource('avpjm') as GeoJSONSource | undefined)?.setData(avpjm)
+  }, [layersReady, avpjm])
 
-    if (instance.isStyleLoaded()) apply()
-    else instance.once('load', apply)
-  }, [data])
+  useEffect(() => {
+    if (!layersReady || !stations) return
+    ;(map.current?.getSource('stations') as GeoJSONSource | undefined)?.setData(stations)
+  }, [layersReady, stations])
 
   useEffect(() => {
     const instance = map.current
-    if (!instance || !avpjm) return
+    // `setLayoutProperty` baca ako sloja nema, a pad ovdje bi obrisao cijeli ekran.
+    if (!layersReady || !instance?.getLayer('stations-points')) return
 
-    const apply = () => {
-      const source = instance.getSource('avpjm') as GeoJSONSource | undefined
-      source?.setData(avpjm)
-    }
-
-    if (instance.isStyleLoaded()) apply()
-    else instance.once('load', apply)
-  }, [avpjm])
-
-  useEffect(() => {
-    const instance = map.current
-    if (!instance || !stations) return
-
-    const apply = () => {
-      const source = instance.getSource('stations') as GeoJSONSource | undefined
-      source?.setData(stations)
-    }
-
-    if (instance.isStyleLoaded()) apply()
-    else instance.once('load', apply)
-  }, [stations])
-
-  useEffect(() => {
-    const instance = map.current
-    if (!instance) return
-
-    const apply = () => {
-      if (!instance.getLayer('stations-points')) return
-      instance.setLayoutProperty(
-        'stations-points',
-        'visibility',
-        showStations ? 'visible' : 'none',
-      )
-    }
-
-    if (instance.isStyleLoaded()) apply()
-    else instance.once('load', apply)
-  }, [showStations])
+    instance.setLayoutProperty(
+      'stations-points',
+      'visibility',
+      showStations ? 'visible' : 'none',
+    )
+  }, [layersReady, showStations])
 
   return (
     <div
