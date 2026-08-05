@@ -380,6 +380,26 @@
             "format": "double",
             "nullable": true
           },
+          "previousValueCm": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "previousMeasuredAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "changeCm": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "changeOverMinutes": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
           "agencyName": {
             "type": "string",
             "nullable": true

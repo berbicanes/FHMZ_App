@@ -1,5 +1,13 @@
 import type { ReachProperties } from '../api/types'
-import { formatMeasuredAt, freshnessLabel, freshnessOf } from '../lib/freshness'
+import {
+  changeWindow,
+  formatMeasuredAt,
+  freshnessLabel,
+  freshnessOf,
+  trendArrow,
+  trendLabel,
+  trendOf,
+} from '../lib/freshness'
 import { lazy, Suspense } from 'react'
 
 /**
@@ -52,10 +60,28 @@ export function ReachDetail({
 
       {/* Vodostaj je heroj ekrana (UI.md §6). Brojevi tabularni. */}
       {reach.valueCm !== null && reach.valueCm !== undefined ? (
-        <p className="tabular mb-1 text-4xl leading-none font-semibold">
-          {reach.valueCm}
-          <span className="ml-1.5 text-base font-normal text-[--color-text-muted]">cm</span>
-        </p>
+        <>
+          <p className="tabular mb-1 text-4xl leading-none font-semibold">
+            {reach.valueCm}
+            <span className="ml-1.5 text-base font-normal text-[--color-text-muted]">cm</span>
+          </p>
+
+          {/* Strelica nikad ne ide sama. Trend je naš izvod iz dva očitanja, pa uz njega
+              stoje tačna razlika i period — inače je tvrdnja koju korisnik ne može provjeriti. */}
+          {reach.changeCm !== null && reach.changeCm !== undefined && (
+            <p className="mb-2 flex flex-wrap items-baseline gap-x-1.5 text-sm">
+              <span aria-hidden="true">{trendArrow(trendOf(reach))}</span>
+              <span>{trendLabel(trendOf(reach))}</span>
+              <span className="tabular text-[--color-text-muted]">
+                {reach.changeCm > 0 ? '+' : ''}
+                {reach.changeCm} cm
+              </span>
+              <span className="text-xs text-[--color-text-muted]">
+                {changeWindow(reach.changeOverMinutes)}
+              </span>
+            </p>
+          )}
+        </>
       ) : (
         <p className="mb-1 text-2xl leading-none font-semibold text-[--color-text-muted]">
           Nema podatka

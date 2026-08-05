@@ -23,6 +23,7 @@ var connection = builder.Configuration.GetConnectionString("Vodostaji")
 builder.Services.AddDbContext<VodostajiDbContext>(options => options.UseNpgsql(connection));
 builder.Services.AddScoped<IReadingStore, EfReadingStore>();
 builder.Services.AddScoped<EfHistoryReader>();
+builder.Services.AddScoped<EfPreviousReadingReader>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 // Jedan HttpClient po izvoru, sa User-Agentom koji nosi kontakt — LEGAL.md §2.6.

@@ -179,6 +179,14 @@ export interface components {
             publicationLagMinutes: number;
             /** Format: double */
             ageRatio?: number | null;
+            /** Format: double */
+            previousValueCm?: number | null;
+            /** Format: date-time */
+            previousMeasuredAt?: string | null;
+            /** Format: double */
+            changeCm?: number | null;
+            /** Format: int64 */
+            changeOverMinutes?: number | null;
             agencyName: string | null;
             agencyUrl: string | null;
             sourceUrl?: string | null;

@@ -29,7 +29,8 @@ public static class AvpSavaReachGeoJson
     public static string Build(
         SourceFetchResult result,
         IReadOnlyDictionary<string, string> geometryByKey,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        IReadOnlyDictionary<string, PreviousMeasurement>? previousByKey = null)
     {
         var features = new JsonArray();
         var withoutGeometry = 0;
@@ -49,7 +50,8 @@ public static class AvpSavaReachGeoJson
                 // kroz naš model pa se ponovo ispiše je poligon koji smo mi prepisali.
                 ["geometry"] = JsonNode.Parse(geometry),
                 ["properties"] = JsonSerializer.SerializeToNode(
-                    Properties(reading, result.FetchedAt, now), Options),
+                    Properties(reading, result.FetchedAt, now, Previous(previousByKey, reading)),
+                    Options),
             });
         }
 
@@ -74,8 +76,18 @@ public static class AvpSavaReachGeoJson
         return collection.ToJsonString(Options);
     }
 
+    private static PreviousMeasurement? Previous(
+        IReadOnlyDictionary<string, PreviousMeasurement>? previousByKey, StationReading reading) =>
+        previousByKey is not null &&
+        previousByKey.TryGetValue(reading.Station.StationKey, out var previous)
+            ? previous
+            : null;
+
     private static ReachProperties Properties(
-        StationReading reading, DateTimeOffset fetchedAt, DateTimeOffset now)
+        StationReading reading,
+        DateTimeOffset fetchedAt,
+        DateTimeOffset now,
+        PreviousMeasurement? previous)
     {
         var measurement = reading.Measurement;
         var age = measurement?.AgeAt(now);
@@ -108,6 +120,17 @@ public static class AvpSavaReachGeoJson
             // ocjene — prag prikaza je odluka UI-a.
             AgeRatio = reading.Station.MissedCycles(measurement?.MeasuredAt, now) is { } missed
                 ? Math.Round(missed, 2)
+                : null,
+
+            // Trend se izvodi iz dva očitanja, pa uz razliku ide i period preko kojeg je
+            // mjerena. Razlika bez perioda pogrešno sugeriše brzinu promjene.
+            PreviousValueCm = measurement is null ? null : previous?.ValueCm,
+            PreviousMeasuredAt = measurement is null ? null : previous?.MeasuredAt,
+            ChangeCm = measurement is not null && previous is not null
+                ? measurement.ValueCm - previous.ValueCm
+                : null,
+            ChangeOverMinutes = measurement is not null && previous is not null
+                ? (long)Math.Round((measurement.MeasuredAt - previous.MeasuredAt).TotalMinutes)
                 : null,
 
             // Atribucija po dionici, ne u footeru (LEGAL.md §2.1).

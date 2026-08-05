@@ -47,9 +47,9 @@ metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor š
 
 - [x] Registar stanica iz `ISV_BIH_2009_javnakarta/MapServer/1`
 - [x] Tačke stanica kao **zaseban sloj** — veze sa dionicama nema, vidi SOURCES.md §1.7
-- [~] Detalj panel po specifikaciji iz `UI.md` — nedostaju **strelica trenda** i
-      **`Suspect` napomena** (UI.md §3). Oboje traži poređenje sa prethodnim očitanjem;
-      vidi napomenu o Fojničkoj ispod. Protoka nema jer ga izvor ne objavljuje.
+- [~] Detalj panel po specifikaciji iz `UI.md` — strelica trenda urađena, nedostaje
+      **`Suspect` napomena** (UI.md §3); vidi napomenu o Fojničkoj ispod.
+      Protoka nema jer ga izvor ne objavljuje.
 - [x] Graf 7/30 dana sa pragovima i imenom agencije koja ih definiše
 - [x] Deep linkovi — `/dionica/{SEC_ID}` i `/stanica/{HID_ID}`, bez rutera kao zavisnosti
 - [x] Pretraga po rijeci i po mjestu, neosjetljiva na dijakritiku i na `dj`/`đ`

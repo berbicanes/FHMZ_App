@@ -52,6 +52,61 @@ export function freshnessLabel(properties: ReachProperties): string {
   return relativeAge(properties.ageMinutes ?? 0)
 }
 
+export type Trend = 'rising' | 'falling' | 'steady' | 'unknown'
+
+/**
+ * Smjer promjene, izveden iz dva očitanja.
+ *
+ * `steady` je rezervisan za **tačno nula**. Svaki drugi prag bi bio naša odluka o tome šta
+ * je "zanemarivo", a to je odluka koju nemamo osnov donijeti — zato uz strelicu uvijek ide
+ * i tačan broj, pa korisnik sam vidi je li promjena od 0.2 cm bitna.
+ */
+export function trendOf(properties: ReachProperties): Trend {
+  const change = properties.changeCm
+  if (change === null || change === undefined) return 'unknown'
+  if (change > 0) return 'rising'
+  if (change < 0) return 'falling'
+  return 'steady'
+}
+
+export function trendArrow(trend: Trend): string {
+  switch (trend) {
+    case 'rising':
+      return '▲'
+    case 'falling':
+      return '▼'
+    case 'steady':
+      return '▬'
+    case 'unknown':
+      return ''
+  }
+}
+
+export function trendLabel(trend: Trend): string {
+  switch (trend) {
+    case 'rising':
+      return 'raste'
+    case 'falling':
+      return 'opada'
+    case 'steady':
+      return 'nepromijenjen'
+    case 'unknown':
+      return 'trend nepoznat'
+  }
+}
+
+/**
+ * Period preko kojeg je promjena mjerena. Ako je izostalo nekoliko očitanja, razlika nije
+ * "za sat" nego "za pet sati" — strelica bez toga pogrešno sugeriše brzinu.
+ */
+export function changeWindow(minutes: number | null | undefined): string | null {
+  if (minutes === null || minutes === undefined) return null
+  if (minutes < 90) return 'u odnosu na prethodni sat'
+
+  const hours = Math.round(minutes / 60)
+  return `u odnosu na očitanje prije ${hours} h`
+}
+
 /**
  * Čitljiv timestamp, ne ISO string (UI.md §3).
  * Vrijeme mjerenja, nikad vrijeme dohvata.

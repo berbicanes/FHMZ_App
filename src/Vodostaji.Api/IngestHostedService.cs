@@ -80,7 +80,7 @@ public sealed class IngestHostedService(
                     "Povučeno: {Known} sa podatkom, {Unknown} bez, {Skipped} preskočeno.",
                     runner.Status.KnownCount, runner.Status.UnknownCount,
                     runner.LastSuccessfulResult?.Skipped.Count ?? 0);
-                await PublishMapAsync(cancellationToken).ConfigureAwait(false);
+                await PublishMapAsync(scope.ServiceProvider, cancellationToken).ConfigureAwait(false);
                 break;
 
             case IngestOutcome.Failed:
@@ -157,14 +157,33 @@ public sealed class IngestHostedService(
         }
     }
 
-    private async Task PublishMapAsync(CancellationToken cancellationToken)
+    private async Task PublishMapAsync(
+        IServiceProvider scoped, CancellationToken cancellationToken)
     {
         if (runner.LastSuccessfulResult is not { } result || _geometry.Count == 0)
         {
             return;
         }
 
-        var geoJson = AvpSavaReachGeoJson.Build(result, _geometry, timeProvider.GetUtcNow());
+        // Prethodna očitanja se čitaju **poslije** upisa, pa je "prethodno" ono prije
+        // trenutnog mjerenja, a ne ono prije ovog ciklusa.
+        var currentByStation = result.Readings
+            .Where(r => r.Measurement is not null)
+            .ToDictionary(r => r.Station.StationKey, r => r.Measurement!.MeasuredAt, StringComparer.Ordinal);
+
+        var reader = scoped.GetRequiredService<EfPreviousReadingReader>();
+        var previous = await reader
+            .ReadAsync(runner.Status.SourceId, currentByStation, cancellationToken)
+            .ConfigureAwait(false);
+
+        var previousByKey = previous.ToDictionary(
+            pair => pair.Key,
+            pair => new PreviousMeasurement(pair.Value.ValueCm, pair.Value.MeasuredAt),
+            StringComparer.Ordinal);
+
+        var geoJson = AvpSavaReachGeoJson.Build(
+            result, _geometry, timeProvider.GetUtcNow(), previousByKey);
+
         await mapFile.WriteAsync(geoJson, cancellationToken).ConfigureAwait(false);
     }
 }

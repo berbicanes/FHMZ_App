@@ -55,6 +55,26 @@ public sealed record ReachProperties
     /// </summary>
     public double? AgeRatio { get; init; }
 
+    /// <summary>
+    /// Prethodno očitanje iz naše historije, ako ga imamo.
+    ///
+    /// Trend se **izvodi**, ne dobija od izvora. AVP Sava ne objavljuje trend, pa uz strelicu
+    /// moraju ići i tačna razlika i period preko kojeg je mjerena — bez toga je strelica naša
+    /// tvrdnja koju korisnik ne može provjeriti.
+    /// </summary>
+    public decimal? PreviousValueCm { get; init; }
+
+    public DateTimeOffset? PreviousMeasuredAt { get; init; }
+
+    /// <summary>Razlika u odnosu na prethodno očitanje. Predznak nosi smjer.</summary>
+    public decimal? ChangeCm { get; init; }
+
+    /// <summary>
+    /// Preko koliko minuta je razlika mjerena. Ako je izostalo nekoliko očitanja, razlika
+    /// nije "za sat" nego "za pet sati", i strelica bez tog podatka pogrešno sugeriše brzinu.
+    /// </summary>
+    public long? ChangeOverMinutes { get; init; }
+
     public required string AgencyName { get; init; }
 
     public required string AgencyUrl { get; init; }
@@ -70,6 +90,9 @@ public sealed record ReachProperties
 }
 
 public sealed record ReachThreshold(string Label, decimal ValueCm, string? Level);
+
+/// <summary>Prethodno očitanje, kako ga graditelj GeoJSON-a prima iz skladišta.</summary>
+public sealed record PreviousMeasurement(decimal ValueCm, DateTimeOffset MeasuredAt);
 
 /// <summary>Zaglavlje kolekcije — UI iz njega zna kad su podaci povučeni i koliko je
 /// dionica bez podatka, bez zasebnog poziva.</summary>
