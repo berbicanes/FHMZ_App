@@ -89,6 +89,19 @@ Prvi put dva izvora u istoj mapi. **Ovdje se testira sav rad oko nejednake gusti
 - [x] `/api/v1/sources` sa statusom po izvoru, vidljiv u UI-u
 - [ ] **Vizuelna provjera: da li jug izgleda "prazan" ili "bez podatka".** Traži ljudske oči.
 
+**Bug koji je držao mapu praznom (2026-08-05):** MapLibre parsira GeoJSON u Web Workeru, a
+ime tog fajla sklapa u vrijeme izvršavanja, pa ga nijedan bundler ne otkriva statički. Worker
+je vraćao 404 → vektorski slojevi prazni, raster podloga se uredno crtala. Mapa je izgledala
+kao mapa **bez ijedne opasnosti**, uz jedan jedini 404 u konzoli.
+
+Riješeno eksplicitnim `?worker&url` uvozom i `setWorkerUrl` (`src/lib/maplibre-worker.ts`).
+Worker nije samostalan — uvozi `maplibre-gl-shared.mjs` — pa mu treba pakovanje sa
+zavisnostima, ne kopiranje fajla.
+
+**Pouka:** greška u infrastrukturi prikaza je u ovoj aplikaciji greška o sigurnosti. Prazna
+mapa i mapa bez opasnosti izgledaju identično. Zato je uz popravku dodano i da se svaka
+greška mape ispiše **na ekranu**, ne u konzoli.
+
 **Model je pukao na dva mjesta, tačno kako je ova faza i predviđala:**
 
 1. **`KnownCount` je značio dvije stvari.** Kod AVP Save "ima ocjenu" i "ima mjerenje" se

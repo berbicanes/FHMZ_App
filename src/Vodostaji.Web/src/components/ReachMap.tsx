@@ -7,6 +7,8 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+// Mora prije prve instance mape.
+import '../lib/maplibre-worker'
 import type {
   ReachCollection,
   ReachProperties,
