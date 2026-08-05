@@ -22,6 +22,7 @@ var connection = builder.Configuration.GetConnectionString("Vodostaji")
 
 builder.Services.AddDbContext<VodostajiDbContext>(options => options.UseNpgsql(connection));
 builder.Services.AddScoped<IReadingStore, EfReadingStore>();
+builder.Services.AddScoped<EfHistoryReader>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 // Jedan HttpClient po izvoru, sa User-Agentom koji nosi kontakt — LEGAL.md §2.6.
@@ -107,6 +108,27 @@ app.MapGet("/api/v1/geojson/stations", async (StationMapFile file, CancellationT
 })
    .Produces<StationFeatureCollection>(StatusCodes.Status200OK, "application/geo+json")
    .WithName("GetStations");
+
+// Historija jedne dionice, za graf 7/30 dana (UI.md §3).
+app.MapGet("/api/v1/reaches/{stationKey}/history", async (
+    string stationKey,
+    int? days,
+    EfHistoryReader reader,
+    TimeProvider time,
+    CancellationToken ct) =>
+{
+    // Samo 7 i 30 dana. Proizvoljan broj bi bio API koji obećava rezolucije koje nemamo.
+    var window = days == 30 ? 30 : 7;
+
+    var history = await reader.ReadAsync(
+        AvpSavaArcGisSource.Id, stationKey, window, time.GetUtcNow(), ct);
+
+    return history is null
+        ? Results.NotFound(new { message = $"Dionica `{stationKey}` ne postoji." })
+        : Results.Ok(history);
+})
+   .Produces<ReachHistory>()
+   .WithName("GetReachHistory");
 
 // Stanje izvora, vidljivo u UI-u. Ovdje se vidi razlika između "jug je prazan"
 // i "jug je bez podatka", i ovdje stoji dokaz za pretpostavku o vremenskoj zoni.

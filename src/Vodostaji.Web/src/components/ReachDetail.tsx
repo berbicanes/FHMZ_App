@@ -1,12 +1,23 @@
 import type { ReachProperties } from '../api/types'
 import { formatMeasuredAt, freshnessLabel, freshnessOf } from '../lib/freshness'
+import { lazy, Suspense } from 'react'
+
+/**
+ * Graf se učitava tek kad se otvori detalj. Recharts je oko 100 KB gzip, a mapa se otvara
+ * mnogo češće nego pojedina dionica — plaćati ga na svakom učitavanju znači usporiti
+ * aplikaciju za sve, zbog ekrana koji većina neće ni otvoriti (UI.md §4).
+ */
+const HistoryChart = lazy(() =>
+  import('./HistoryChart').then((module) => ({ default: module.HistoryChart })),
+)
 
 /**
  * Detalj odabrane dionice.
  *
- * Faza 1 pokriva vodostaj, vrijeme mjerenja, pragove i atribuciju. Graf 7/30 dana i trend
- * dolaze u Fazi 2 — dodavanje strelice trenda sada bi značilo da je izmišljamo iz jednog
- * očitanja, a to je izmišljanje podatka.
+ * Vodostaj, vrijeme mjerenja, pragovi, graf 7/30 dana i atribucija.
+ *
+ * Strelice trenda još nema: izvodi se iz dva uzastopna očitanja, a historija se tek puni.
+ * Strelica izvedena iz jednog očitanja bila bi izmišljen podatak.
  */
 export function ReachDetail({
   reach,
@@ -119,6 +130,16 @@ export function ReachDetail({
             Pragove definiše {reach.thresholdsDefinedBy}.
           </p>
         </section>
+      )}
+
+      {reach.stationKey && (
+        <Suspense
+          fallback={
+            <p className="mt-4 text-sm text-[--color-text-muted]">Učitavanje historije…</p>
+          }
+        >
+          <HistoryChart stationKey={reach.stationKey} />
+        </Suspense>
       )}
 
       {/* Atribucija po dionici, ne u footeru (LEGAL.md §2.1). */}

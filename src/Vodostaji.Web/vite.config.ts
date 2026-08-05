@@ -16,6 +16,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('maplibre-gl')) return 'maplibre'
+          if (id.includes('recharts') || id.includes('d3-')) return 'charts'
           return undefined
         },
       },

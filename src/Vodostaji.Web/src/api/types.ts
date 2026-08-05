@@ -14,6 +14,8 @@ export type ReachMeta = components['schemas']['ReachMeta']
 export type SourceStatus = components['schemas']['SourceStatus']
 export type StationProperties = components['schemas']['StationProperties']
 export type StationMeta = components['schemas']['StationMeta']
+export type ReachHistory = components['schemas']['ReachHistory']
+export type HistoryPoint = components['schemas']['HistoryPoint']
 
 /** GeoJSON kolekcija dionica, sa `meta` zaglavljem koje backend dodaje. */
 export type ReachCollection = FeatureCollection<Geometry, ReachProperties> & {

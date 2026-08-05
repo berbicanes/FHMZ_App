@@ -47,8 +47,10 @@ metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor š
 
 - [x] Registar stanica iz `ISV_BIH_2009_javnakarta/MapServer/1`
 - [x] Tačke stanica kao **zaseban sloj** — veze sa dionicama nema, vidi SOURCES.md §1.7
-- [ ] Detalj panel po specifikaciji iz `UI.md`
-- [ ] Graf 7/30 dana sa pragovima i imenom agencije koja ih definiše
+- [~] Detalj panel po specifikaciji iz `UI.md` — nedostaju **strelica trenda** i
+      **`Suspect` napomena** (UI.md §3). Oboje traži poređenje sa prethodnim očitanjem;
+      vidi napomenu o Fojničkoj ispod. Protoka nema jer ga izvor ne objavljuje.
+- [x] Graf 7/30 dana sa pragovima i imenom agencije koja ih definiše
 - [x] Deep linkovi — `/dionica/{SEC_ID}` i `/stanica/{HID_ID}`, bez rutera kao zavisnosti
 - [x] Pretraga po rijeci i po mjestu, neosjetljiva na dijakritiku i na `dj`/`đ`
 - [x] Prikaz starosti podatka (opacity, ivica, šrafura) — urađeno u Fazi 1
@@ -56,6 +58,16 @@ metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor š
 **Otvoreno:** produkcijski server mora vraćati `index.html` za `/dionica/*` i `/stanica/*`.
 U razvoju to radi Vite; kad Api počne servirati SPA, treba mu fallback ruta. Bez toga
 podijeljen link otvara 404 — a deep linkovi su glavni kanal distribucije (UI.md §4).
+
+**Nalaz iz podataka, 2026-08-05:** dionica `Fojnička rijeka` je u tri uzastopna sata dala
+120 → 160 → −28.3 cm. Izvor je tako objavio i mi to vjerno čuvamo, ali skok od 188 cm za sat
+gotovo sigurno nije voda nego senzor. `UI.md` §3 traži `Suspect` oznaku baš za ovo, a ona
+još ne postoji.
+
+Prag za `Suspect` je **odluka koja se ne smije olako donijeti**: previše osjetljiv prag bi
+označio stvarni poplavni talas kao sumnjiv i naveo korisnika da ga zanemari. Oznaka mora biti
+dodatna informacija uz vrijednost i status agencije, nikad zamjena za njih i nikad razlog da
+se očitanje sakrije.
 
 **Napomena:** web nema test runner. `normalise` i `matches` su provjereni ručno, ali bi
 trebali imati testove; izbor alata (Vitest?) je pitanje za dogovor jer nije u stacku.

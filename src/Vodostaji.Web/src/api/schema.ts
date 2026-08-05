@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reaches/{stationKey}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetReachHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sources": {
         parameters: {
             query?: never;
@@ -94,6 +110,13 @@ export interface components {
          * @enum {integer}
          */
         CircuitState: 0 | 1 | 2;
+        HistoryPoint: {
+            /** Format: date-time */
+            measuredAt?: string;
+            /** Format: double */
+            valueCm?: number;
+            level?: string | null;
+        };
         ReachFeature: {
             readonly type?: string | null;
             geometry: unknown;
@@ -103,6 +126,20 @@ export interface components {
             readonly type?: string | null;
             meta: components["schemas"]["ReachMeta"];
             features: components["schemas"]["ReachFeature"][] | null;
+        };
+        ReachHistory: {
+            sourceId: string | null;
+            stationKey: string | null;
+            name: string | null;
+            river?: string | null;
+            /** Format: int32 */
+            days: number;
+            points: components["schemas"]["HistoryPoint"][] | null;
+            thresholds?: components["schemas"]["ReachThreshold"][] | null;
+            thresholdsDefinedBy?: string | null;
+            agencyName: string | null;
+            /** Format: date-time */
+            collectingSince?: string | null;
         };
         ReachMeta: {
             sourceId: string | null;
@@ -252,6 +289,30 @@ export interface operations {
                 };
                 content: {
                     "application/geo+json": components["schemas"]["StationFeatureCollection"];
+                };
+            };
+        };
+    };
+    GetReachHistory: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                stationKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReachHistory"];
                 };
             };
         };
