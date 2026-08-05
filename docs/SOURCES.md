@@ -123,6 +123,45 @@ Za Fazu 2 to znači: apsolutne kote nisu moguće za 13 stanica.
 | `Crowdsource_Flood_public` | Feature + Map | **`ArcGIS 500: Service not started`** — ne postoji kao izvor |
 | `ServisneInformacije_javno`, `Vodna_knjiga_SA`, `RBM_Nitrati`, `VodniKatastri_Nitrati`, `RBM_EKO_Nitrati`, `MAPE_HAZARD_RISK/*`, `FGU_INSPIRE_Geoportal/*`, `PUBLIC/BIH_ISV_PubWebApp_VD_PP_PA` | | postoje, nisu relevantni |
 
+### 1.7 `HYDRO_ID` ne povezuje dionice sa stanicama — provjereno 2026-08-05
+
+**Dionice i registar stanica se ne mogu spojiti javnim podacima.** Ne pokušavaj.
+
+`HYDRO_ID` na sloju dionica ima 39 različitih vrijednosti u rasponu 1–39. Numerički se
+poklapa savršeno:
+
+| Ključ | Poklapanje |
+|---|---|
+| `HYDRO_ID` ∩ `sloj1.HID_ID` | 35/39 |
+| `HYDRO_ID` ∩ `t98.HIDRO_ID` | **39/39** |
+| `HYDRO_ID` ∩ `t50.HIDRO_ID` | **39/39** |
+
+**I to je zamka.** Spoj uspijeva numerički a semantički je besmislen:
+
+| Dionica | `HYDRO_ID` | Spojena stanica |
+|---|---|---|
+| Sana-Sanski Most | 1 | HS Goražde *(druga rijeka, drugi kraj zemlje)* |
+| Una-Bihać | 5 | HS Rmanj Manastir |
+| Bosna-Zenica | 22 | HS Raspotočje |
+
+Provjereno i obrnuto: za 19 dionica kod kojih se stanica može nedvosmisleno naći **po imenu**,
+`HYDRO_ID` se ne poklapa ni sa `HID_ID` ni sa `HIDRO_ID` te stanice — **nijednom od 19**.
+Razlike nemaju obrazac, pa nije ni pomak ni preslikavanje.
+
+Pretraženo je i svih 109 slojeva servisa: `SEC_ID` se ne pojavljuje nigdje, a `HID_ID` samo u
+slojevima 1, 50 i 98. **`HYDRO_ID` dakle pokazuje na registar koji nije javno objavljen.**
+
+**Šta to znači za Fazu 2:** ništa se ne blokira. Dionice nose vrijednost, vrijeme, pragove i
+historiju — sve što detalj i graf trebaju. Registar stanica ide kao **zaseban sloj tačaka**,
+što UI.md §1 ionako traži. Spajanje po imenu bi radilo za 19 od 45, a ostatak bi bio nagađanje;
+izmišljena veza između dionice i stanice je izmišljen podatak.
+
+Ako veza zatreba (npr. `KOTA_0` za apsolutnu kotu), jedini pošten put je **ručno provjerena
+tabela u repozitoriju**, sa eksplicitno navedenim nespojenim slučajevima — nikad zaključivanje
+u vrijeme izvršavanja. Ili pitanje za `info@voda.ba` u Fazi 6.
+
+---
+
 ### 1.6 Vremenska zona — riješeno 2026-08-04
 
 **`DATE_TIME` je pravi UTC epoch. Ne pomjera se ni za sekundu.**
@@ -397,8 +436,7 @@ Ne gradi na ovome dok pristup nije potvrđen, ali drži interfejs otvorenim.
    upitu sa SQL literalom. Vrijedi zapamtiti redoslijed: **prvo pitaj izvor šta tvrdi o sebi,
    pa tek onda mjeri.** Sonda je trošila 24 sata na pitanje koje je servis odgovarao odmah.
 
-2. **Veza `HYDRO_ID` ↔ `HID_ID`** je pretpostavljena iz imena polja, nije potvrđena spajanjem
-   45 dionica sa 102 stanice. Uradi prije Faze 2.
+2. ~~**Veza `HYDRO_ID` ↔ `HID_ID`**~~ **Provjereno 2026-08-05: veze nema.** Vidi §1.7.
 
 3. **Brčko** — nije istraženo, nema poznat izvor.
 

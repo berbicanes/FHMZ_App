@@ -46,7 +46,7 @@ metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor š
 ## Faza 2 — Stanice i historija ⬅️ **TRENUTNA**
 
 - [ ] Registar stanica iz `ISV_BIH_2009_javnakarta/MapServer/1`
-- [ ] Tačke stanica kao zaseban sloj
+- [ ] Tačke stanica kao **zaseban sloj** — veze sa dionicama nema, vidi SOURCES.md §1.7
 - [ ] Detalj panel po specifikaciji iz `UI.md`
 - [ ] Graf 7/30 dana sa pragovima i imenom agencije koja ih definiše
 - [ ] Deep linkovi `/stanica/{key}`
