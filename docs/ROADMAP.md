@@ -45,13 +45,20 @@ metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor š
 
 ## Faza 2 — Stanice i historija ⬅️ **TRENUTNA**
 
-- [ ] Registar stanica iz `ISV_BIH_2009_javnakarta/MapServer/1`
-- [ ] Tačke stanica kao **zaseban sloj** — veze sa dionicama nema, vidi SOURCES.md §1.7
+- [x] Registar stanica iz `ISV_BIH_2009_javnakarta/MapServer/1`
+- [x] Tačke stanica kao **zaseban sloj** — veze sa dionicama nema, vidi SOURCES.md §1.7
 - [ ] Detalj panel po specifikaciji iz `UI.md`
 - [ ] Graf 7/30 dana sa pragovima i imenom agencije koja ih definiše
-- [ ] Deep linkovi `/stanica/{key}`
-- [ ] Pretraga po rijeci i po mjestu
-- [ ] Prikaz starosti podatka (opacity, ivica, šrafura)
+- [x] Deep linkovi — `/dionica/{SEC_ID}` i `/stanica/{HID_ID}`, bez rutera kao zavisnosti
+- [x] Pretraga po rijeci i po mjestu, neosjetljiva na dijakritiku i na `dj`/`đ`
+- [x] Prikaz starosti podatka (opacity, ivica, šrafura) — urađeno u Fazi 1
+
+**Otvoreno:** produkcijski server mora vraćati `index.html` za `/dionica/*` i `/stanica/*`.
+U razvoju to radi Vite; kad Api počne servirati SPA, treba mu fallback ruta. Bez toga
+podijeljen link otvara 404 — a deep linkovi su glavni kanal distribucije (UI.md §4).
+
+**Napomena:** web nema test runner. `normalise` i `matches` su provjereni ručno, ali bi
+trebali imati testove; izbor alata (Vitest?) je pitanje za dogovor jer nije u stacku.
 
 ---
 

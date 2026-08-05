@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type {
   ReachCollection,
@@ -12,8 +12,10 @@ import { Legend } from './components/Legend'
 import { ReachDetail } from './components/ReachDetail'
 import { ReachMap } from './components/ReachMap'
 import { ReachTable } from './components/ReachTable'
+import { Search } from './components/Search'
 import { StationDetail } from './components/StationDetail'
 import { formatMeasuredAt } from './lib/freshness'
+import { useRoute } from './lib/router'
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url)
@@ -24,9 +26,8 @@ async function fetchJson<T>(url: string): Promise<T> {
 }
 
 export default function App() {
-  const [selected, setSelected] = useState<ReachProperties | null>(null)
-  const [selectedStation, setSelectedStation] = useState<StationProperties | null>(null)
-  const [showStations, setShowStations] = useState(false)
+  const [route, navigate] = useRoute()
+  const [showStations, setShowStations] = useState(route.kind === 'station')
 
   // TanStack Query, nikad useEffect (CLAUDE.md → Konvencije).
   // Osvježavanje na 5 minuta; izvor se mijenja na sat, pa češće nema šta stići.
@@ -36,11 +37,12 @@ export default function App() {
     refetchInterval: 5 * 60 * 1000,
   })
 
-  // Registar se mijenja rijetko; povlači se samo kad je sloj uključen.
+  // Registar se povlači kad je sloj uključen ili kad je otvoren deep link na stanicu —
+  // link koji neko podijeli mora raditi i prije nego posjetilac išta uključi.
   const stations = useQuery({
     queryKey: ['stations'],
     queryFn: () => fetchJson<StationCollection>('/api/v1/geojson/stations'),
-    enabled: showStations,
+    enabled: showStations || route.kind === 'station',
     staleTime: 60 * 60 * 1000,
   })
 
@@ -50,19 +52,55 @@ export default function App() {
     refetchInterval: 5 * 60 * 1000,
   })
 
-  const properties = reaches.data?.features.map((feature) => feature.properties) ?? []
+  const reachProperties = useMemo(
+    () => reaches.data?.features.map((f) => f.properties) ?? [],
+    [reaches.data],
+  )
+  const stationProperties = useMemo(
+    () => stations.data?.features.map((f) => f.properties) ?? [],
+    [stations.data],
+  )
+
+  // Šta je otvoreno određuje URL, ne stanje komponente. Tako podijeljen link uvijek
+  // otvara isto što je pošiljalac gledao (UI.md §4).
+  const selectedReach: ReachProperties | null =
+    route.kind === 'reach'
+      ? (reachProperties.find((r) => r.stationKey === route.key) ?? null)
+      : null
+
+  const selectedStation: StationProperties | null =
+    route.kind === 'station'
+      ? (stationProperties.find((s) => s.stationKey === route.key) ?? null)
+      : null
+
+  // Naslov kartice prati ono što je otvoreno — link dijeljen u poruci nosi ime dionice.
+  useEffect(() => {
+    const name = selectedReach?.name ?? selectedStation?.name
+    document.title = name ? `${name} — Vodostaji BiH` : 'Vodostaji BiH'
+  }, [selectedReach, selectedStation])
+
   const meta = reaches.data?.meta
   const source = sources.data?.[0]
+
+  // Ruta koja pokazuje na nešto što ne postoji nije prazan ekran nego objašnjenje.
+  const missingTarget =
+    (route.kind === 'reach' && reaches.isSuccess && !selectedReach) ||
+    (route.kind === 'station' && stations.isSuccess && !selectedStation)
 
   return (
     <div className="flex h-full flex-col">
       <DisclaimerBar />
 
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[--color-border] px-4 py-3">
-        <h1 className="text-lg font-semibold">Vodostaji BiH</h1>
+        <button
+          type="button"
+          onClick={() => navigate({ kind: 'map' })}
+          className="text-lg font-semibold"
+        >
+          Vodostaji BiH
+        </button>
         {meta && (
           <p className="text-xs text-[--color-text-muted]">
-            {/* Vidljiv timestamp mjerenja, ne vremena dohvata (zlatno pravilo 2). */}
             {meta.knownCount} od {meta.reachCount} dionica ima podatak · povučeno{' '}
             {formatMeasuredAt(meta.fetchedAt) ?? '—'}
           </p>
@@ -94,22 +132,18 @@ export default function App() {
           <ReachMap
             data={reaches.data}
             stations={stations.data}
-            showStations={showStations}
-            onSelect={(reach) => {
-              setSelected(reach)
-              setSelectedStation(null)
-            }}
-            onSelectStation={(station) => {
-              setSelectedStation(station)
-              setSelected(null)
-            }}
+            showStations={showStations || route.kind === 'station'}
+            onSelect={(reach) => navigate({ kind: 'reach', key: reach.stationKey ?? '' })}
+            onSelectStation={(station) =>
+              navigate({ kind: 'station', key: station.stationKey ?? '' })
+            }
           />
 
           <div className="absolute top-3 left-3 z-10 rounded border border-[--color-border] bg-[--color-surface-raised]/95 px-3 py-2 text-sm">
             <label className="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
-                checked={showStations}
+                checked={showStations || route.kind === 'station'}
                 onChange={(event) => setShowStations(event.target.checked)}
               />
               <span>Mjerna mjesta</span>
@@ -123,18 +157,44 @@ export default function App() {
         </main>
 
         <div className="flex w-full flex-col overflow-y-auto border-t border-[--color-border] lg:w-[26rem] lg:border-t-0 lg:border-l">
-          {selected && (
-            <ReachDetail reach={selected} onClose={() => setSelected(null)} />
+          {missingTarget && (
+            <div className="border-b border-[--color-border] bg-[--color-surface-raised] p-4 text-sm">
+              <p>
+                {route.kind === 'reach' ? 'Dionica' : 'Mjerno mjesto'} sa oznakom „{route.key}”
+                ne postoji u trenutnim podacima. Možda je izvor promijenio oznake.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate({ kind: 'map' })}
+                className="mt-2 rounded border border-[--color-border] px-2 py-1 text-xs"
+              >
+                Nazad na mapu
+              </button>
+            </div>
+          )}
+
+          {selectedReach && (
+            <ReachDetail reach={selectedReach} onClose={() => navigate({ kind: 'map' })} />
           )}
 
           {selectedStation && (
             <StationDetail
               station={selectedStation}
-              onClose={() => setSelectedStation(null)}
+              onClose={() => navigate({ kind: 'map' })}
             />
           )}
 
           <div className="space-y-5 p-4">
+            <Search
+              reaches={reachProperties}
+              stations={stationProperties}
+              onOpenReach={(key) => navigate({ kind: 'reach', key })}
+              onOpenStation={(key) => {
+                setShowStations(true)
+                navigate({ kind: 'station', key })
+              }}
+            />
+
             {source && <Legend agencyName={source.agencyName ?? 'izvor'} />}
 
             {source && (
@@ -142,7 +202,9 @@ export default function App() {
                 <h2 className="mb-1 font-semibold tracking-wide uppercase">Izvor</h2>
                 <p>
                   {source.agencyName} ·{' '}
-                  {source.isHealthy ? 'dostupan' : `nedostupan (${source.lastFailureReason ?? '—'})`}
+                  {source.isHealthy
+                    ? 'dostupan'
+                    : `nedostupan (${source.lastFailureReason ?? '—'})`}
                 </p>
                 {/* Pretpostavka o vremenskoj zoni je javno provjerljiva, ne skrivena. */}
                 {source.clockEvidence && (
@@ -156,8 +218,11 @@ export default function App() {
 
             {/* Registar mora objasniti razliku između broja stanica i broja tačaka na mapi,
                 inače korisnik koji broji dobije drugi rezultat od nas. */}
-            {showStations && stations.data && (
-              <section aria-label="Registar mjernih mjesta" className="text-xs text-[--color-text-muted]">
+            {stations.data && (
+              <section
+                aria-label="Registar mjernih mjesta"
+                className="text-xs text-[--color-text-muted]"
+              >
                 <h2 className="mb-1 font-semibold tracking-wide uppercase">Mjerna mjesta</h2>
                 <p className="leading-relaxed">
                   Registar ima {stations.data.meta.stationCount} stanica; na mapi ih je{' '}
@@ -177,7 +242,10 @@ export default function App() {
             <h2 className="mb-2 text-xs font-semibold tracking-wide text-[--color-text-muted] uppercase">
               Sve dionice
             </h2>
-            <ReachTable reaches={properties} onSelect={setSelected} />
+            <ReachTable
+              reaches={reachProperties}
+              onSelect={(reach) => navigate({ kind: 'reach', key: reach.stationKey ?? '' })}
+            />
           </section>
         </div>
       </div>
