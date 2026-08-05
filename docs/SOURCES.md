@@ -401,12 +401,35 @@ Vrijedi periodično provjeriti. **Ne graditi na tome dok ne proradi.**
 Stranica biltena (`/page/bilten-izvjestaj-o-vodostanju`) je takođe prazna u HTML-u i nema
 otkriven izvor podataka.
 
-### 4.3 Vode Srpske
+### 4.3 Vode Srpske — bilteni provjereni čitanjem
 
-`voders.org` nosi **34 biltena u PDF-u**, imenovanih `ЈУ-Воде-Српске-БИЛТЕН-бројN.pdf`.
-Numerisani su rednim brojem, ne datumom — to je institucionalni časopis, **ne operativni
-dnevni bilten sa vodostajima**. Vijesti o vodostajima postoje kao tekst
-(`/opadanje-vodostaja-u-republici-srpskoj/`), ali kao proza, ne kao podatak.
+`voders.org` nosi **34 biltena u PDF-u**. U Fazi 0 je ovdje pisalo da su "časopis, ne
+operativni bilten" — zaključeno **iz imena fajla**. Provjereno 2026-08-05 otvaranjem broja 26:
+
+> **БИЛТЕН · ГОДИНА 7, БРОЈ 26 · ЈУН-ЈУЛ-АВГУСТ 2026 · БЕСПЛАТАН ПРИМЈЕРАК**
+
+Tromjesečni institucionalni časopis: 12 stranica, 28 slika, članci o investicijama i radovima,
+osvrt na period obilnih padavina krajem marta. **Proza o poplavama, nijedna tabela vodostaja.**
+Zaključak je bio tačan, ali sada je i dokazan.
+
+### 4.4 Stranica biltena RHMZ RS je prazna
+
+`/page/bilten-izvjestaj-o-vodostanju` inicijalizuje DataTable nad elementom `#docs`:
+
+```js
+$(document).ready(function () { $('#docs').DataTable({ … }); });
+```
+
+**Tog elementa nema u HTML-u.** Nema nijedne `<table>`, nijednog PDF linka, ni na
+`rhmzrs.com` ni na `novi.rhmzrs.com`. Ista bolest kao njihova mapa stanica (§4.2).
+
+Pretraženo je i dalje: nema sitemapa, `hidrologija-aktuelnosti` nosi samo meteorološka
+upozorenja (toplotni talas), a `/alert/54` i `/post/*` su vijesti. U cijelom sajtu se spominje
+**jedan jedini** API endpoint — `/api/flood-defense-points`, koji **nema koordinate**, pa se
+ne može ni prikazati na mapi.
+
+`robots.txt` je `User-agent: * Disallow:` — dozvoljavaju sve. To ide u prilog poziciji iz
+`LEGAL.md` §1.
 
 ### 4.4 Zaključak za Fazu 4
 

@@ -8,6 +8,7 @@ import type {
   StationProperties,
 } from './api/types'
 import { DisclaimerBar, PersistentDisclaimer } from './components/DisclaimerBar'
+import { Coverage } from './components/Coverage'
 import { Legend, PointSourceLegend } from './components/Legend'
 import { ReachDetail } from './components/ReachDetail'
 import { POINT_SOURCES, ReachMap, type PointSourceId } from './components/ReachMap'
@@ -317,6 +318,8 @@ export default function App() {
                 </p>
               </section>
             )}
+
+            <Coverage />
 
             <PersistentDisclaimer />
           </div>

@@ -130,8 +130,18 @@ SOURCES.md §2.
 Puna pokrivenost. Očekuj da će RS adapter biti najkrhkiji dio sistema.
 
 - [x] `FhmzbihSource` — 12 stanica, AngleSharp, koordinate i kota nule sa podstranica
-- [ ] `RhmzRsSource` (HTML + PDF bilteni)
-- [ ] Brčko — istražiti šta uopšte postoji
+- [x] `RhmzRsSource` — **istraženo do kraja, izvora nema.** Vidi SOURCES.md §4.2–4.4:
+      mapa automatskih stanica im je pokvarena, stranica biltena prazna na oba mirrora,
+      a bilteni Voda Srpske su tromjesečni časopis (provjereno čitanjem broja 26).
+      Jedini API im je `/api/flood-defense-points`, bez koordinata.
+- [x] Brčko — istraženo, nijedan izvor nije nađen.
+
+**Umjesto adaptera: objašnjena praznina.** Sjeveroistok zemlje nije miran nego neprikazan, i
+UI to sada piše doslovno („Šta nije pokriveno"). Praznina bez objašnjenja čita se kao
+„nema šta prijaviti" — zlatno pravilo 1 na nivou cijele karte.
+
+RS se vraća u Fazu 6, gdje kontakt donosi najviše: njihova mapa stanica **postoji ali je
+pokvarena**, pa se ne traži da naprave nešto novo nego da poprave nešto svoje.
 - [x] Neuspjeh parsiranja tretiran kao normalno stanje, ne kao pad joba
 
 **Treći izvor, treća konvencija.** AVP Sava objavljuje stupanj opasnosti i mjeri na sat;
