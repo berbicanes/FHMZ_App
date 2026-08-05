@@ -20,9 +20,9 @@ const HATCH = 'hatch-no-data'
 /**
  * Podloga. Tamna i prigušena, da boje statusa budu najsvjetlija stvar na ekranu (UI.md §6).
  *
- * CARTO dark_all je besplatan raster uz obaveznu atribuciju. Vanjski host, pa je ovo
- * odluka koju vrijedi preispitati prije produkcije — ali nije izvor podataka o vodostaju,
- * nego samo pozadina, i zamjenjuje se jednim objektom ispod.
+ * CARTO dark_all je besplatan raster uz obaveznu atribuciju. Vanjski host, pa je ovo odluka
+ * koju vrijedi preispitati prije produkcije — ali nije izvor podataka o vodostaju, nego samo
+ * pozadina, i zamjenjuje se jednim objektom ispod.
  */
 const BASEMAP: StyleSpecification = {
   version: 8,
@@ -47,6 +47,8 @@ interface Props {
   showStations: boolean
   onSelect: (properties: ReachProperties) => void
   onSelectStation: (properties: StationProperties) => void
+  /** Mapa koja ne uspije mora to **reći**. Tiha prazna mapa izgleda kao mapa bez opasnosti. */
+  onError: (message: string) => void
 }
 
 export function ReachMap({
@@ -56,23 +58,28 @@ export function ReachMap({
   showStations,
   onSelect,
   onSelectStation,
+  onError,
 }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
+
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
   const onSelectStationRef = useRef(onSelectStation)
   onSelectStationRef.current = onSelectStation
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
 
   /**
-   * Slojevi se dodaju tek kad stil bude učitan, pa podaci ne smiju biti primijenjeni prije
-   * toga. Ranije se to rješavalo sa `else instance.once('load', apply)` — i to je bio bug:
-   * `load` se emituje **jednom**. Ako bi podatak stigao nakon tog događaja a `isStyleLoaded()`
-   * na tren vratio `false`, pretplata bi čekala događaj koji se nikad više neće desiti, i
-   * podatak bi se tiho izgubio. Mapa je bila prazna, bez ijedne greške u konzoli.
+   * Slojevi se prave tek kad stil bude učitan, pa se podaci ne smiju primijeniti prije toga.
    *
-   * Zastavica u stanju je deterministična: kad se postavi, effecti se ponovo izvrše i podatak
-   * se primijeni bez obzira na to ko je stigao prvi.
+   * Ranije je to bilo riješeno sa `else instance.once('load', apply)`, i to je bio bug:
+   * `load` se emituje jednom, pa pretplata napravljena nakon njega čeka zauvijek. React
+   * `StrictMode` je to i garantovao — montira, demontira, pa montira ponovo, a effecti za
+   * podatke zavise samo od podataka, koji se pri tom nisu promijenili.
+   *
+   * Zastavica u stanju je deterministična: cleanup je gasi, nova mapa je pali, i svaki
+   * effect se ponovo izvrši nad onom mapom koja je trenutno živa.
    */
   const [layersReady, setLayersReady] = useState(false)
 
@@ -89,142 +96,30 @@ export function ReachMap({
 
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
 
+    // Greška iz MapLibre runtimea ide na ekran, ne samo u konzolu.
+    instance.on('error', (event) => {
+      const message = (event as { error?: Error }).error?.message
+      if (message) onErrorRef.current(message)
+    })
+
     instance.on('load', () => {
-      instance.addImage(HATCH, createHatchPattern(), { pixelRatio: 2 })
+      try {
+        buildLayers(instance)
+        setLayersReady(true)
+      } catch (error) {
+        // Bez ovoga jedan izuzetak ostavi mapu bez ijednog sloja, a to na ekranu izgleda
+        // kao "nigdje nema opasnosti" — najgori mogući ishod.
+        onErrorRef.current(
+          `Slojevi mape nisu napravljeni: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        )
+        return
+      }
 
-      instance.addSource('reaches', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-      })
+      for (const layer of ['reaches-fill', 'reaches-no-data', 'avpjm-points']) {
+        if (!instance.getLayer(layer)) continue
 
-      // Ispuna po boji iz renderera agencije. Boja stiže u podatku; ovdje se ne bira.
-      instance.addLayer({
-        id: 'reaches-fill',
-        type: 'fill',
-        source: 'reaches',
-        filter: ['!=', ['get', 'level'], 'Unknown'],
-        paint: {
-          'fill-color': ['get', 'color'],
-          // Stariji podatak je vidljivo bljeđi (UI.md §2).
-          'fill-opacity': [
-            'case',
-            ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,
-            ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
-            0.85,
-          ],
-        },
-      })
-
-      // Dionice bez podatka nose šrafuru, ne samo sivu ispunu. Siva sama može izgledati
-      // kao "mirno"; šrafura ne može (UI.md §2).
-      instance.addLayer({
-        id: 'reaches-no-data',
-        type: 'fill',
-        source: 'reaches',
-        filter: ['==', ['get', 'level'], 'Unknown'],
-        paint: { 'fill-pattern': HATCH, 'fill-opacity': 0.75 },
-      })
-
-      // Puna ivica za podatak koji nije zastario.
-      instance.addLayer({
-        id: 'reaches-outline',
-        type: 'line',
-        source: 'reaches',
-        filter: ['<=', ['coalesce', ['get', 'ageRatio'], 0], 3],
-        paint: { 'line-color': '#0d1117', 'line-width': 0.6, 'line-opacity': 0.8 },
-      })
-
-      // Isprekidana ivica za zastario podatak (UI.md §2). `line-dasharray` ne prima
-      // izraze po podatku, pa zastarjele dionice dobijaju vlastiti sloj.
-      instance.addLayer({
-        id: 'reaches-outline-stale',
-        type: 'line',
-        source: 'reaches',
-        filter: ['>', ['coalesce', ['get', 'ageRatio'], 0], 3],
-        paint: {
-          'line-color': '#e6edf3',
-          'line-width': 1.4,
-          'line-opacity': 0.75,
-          'line-dasharray': [2, 2],
-        },
-      })
-
-      // Jadranski sliv — **zaseban izvor i zaseban sloj**. Nikad stopljen sa dionicama:
-      // AVP Sava daje ocjenu opasnosti, AVPJM je ne daje, i jedna legenda za oboje bi
-      // morala izmisliti nešto za jednu od agencija (CLAUDE.md → Šta NE raditi).
-      instance.addSource('avpjm', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-      })
-
-      instance.addLayer({
-        id: 'avpjm-points',
-        type: 'circle',
-        source: 'avpjm',
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4, 10, 8],
-          'circle-color': ['get', 'color'],
-          'circle-stroke-color': '#0d1117',
-          'circle-stroke-width': 1,
-          'circle-opacity': [
-            'case',
-            ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,
-            ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
-            0.9,
-          ],
-        },
-      })
-
-      instance.on('click', 'avpjm-points', (event) => {
-        const feature = event.features?.[0] as MapGeoJSONFeature | undefined
-        if (feature) onSelectRef.current(feature.properties as unknown as ReachProperties)
-      })
-      instance.on('mouseenter', 'avpjm-points', () => {
-        instance.getCanvas().style.cursor = 'pointer'
-      })
-      instance.on('mouseleave', 'avpjm-points', () => {
-        instance.getCanvas().style.cursor = ''
-      })
-
-      instance.addSource('stations', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-      })
-
-      // Mjerna mjesta, ne stanja.
-      //
-      // Namjerno bez ispune u boji. Registar kaže gdje se mjeri, a stanje na tim mjestima
-      // nemamo — `HYDRO_ID` ne povezuje dionice sa ovim registrom (SOURCES.md §1.7).
-      // Ispunjen krug bilo koje neutralne boje čitao bi se kao "ovdje je sve u redu", što je
-      // tačno ono što zlatno pravilo 1 zabranjuje. Prazan prsten ne tvrdi ništa.
-      instance.addLayer({
-        id: 'stations-points',
-        type: 'circle',
-        source: 'stations',
-        layout: { visibility: 'none' },
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 3, 10, 6],
-          'circle-color': 'transparent',
-          'circle-stroke-color': '#e6edf3',
-          'circle-stroke-width': 1.5,
-          'circle-opacity': 1,
-        },
-      })
-
-      instance.on('click', 'stations-points', (event) => {
-        const feature = event.features?.[0] as MapGeoJSONFeature | undefined
-        if (feature) onSelectStationRef.current(feature.properties as unknown as StationProperties)
-      })
-      instance.on('mouseenter', 'stations-points', () => {
-        instance.getCanvas().style.cursor = 'pointer'
-      })
-      instance.on('mouseleave', 'stations-points', () => {
-        instance.getCanvas().style.cursor = ''
-      })
-
-      setLayersReady(true)
-
-      for (const layer of ['reaches-fill', 'reaches-no-data']) {
         instance.on('click', layer, (event) => {
           const feature = event.features?.[0] as MapGeoJSONFeature | undefined
           if (feature) onSelectRef.current(feature.properties as unknown as ReachProperties)
@@ -236,9 +131,25 @@ export function ReachMap({
           instance.getCanvas().style.cursor = ''
         })
       }
+
+      if (instance.getLayer('stations-points')) {
+        instance.on('click', 'stations-points', (event) => {
+          const feature = event.features?.[0] as MapGeoJSONFeature | undefined
+          if (feature) {
+            onSelectStationRef.current(feature.properties as unknown as StationProperties)
+          }
+        })
+        instance.on('mouseenter', 'stations-points', () => {
+          instance.getCanvas().style.cursor = 'pointer'
+        })
+        instance.on('mouseleave', 'stations-points', () => {
+          instance.getCanvas().style.cursor = ''
+        })
+      }
     })
 
     map.current = instance
+
     return () => {
       instance.remove()
       map.current = null
@@ -281,4 +192,141 @@ export function ReachMap({
       aria-label="Mapa stanja rijeka u Bosni i Hercegovini. Tabelarni pregled istih podataka je ispod mape."
     />
   )
+}
+
+/**
+ * Pravi sve izvore i slojeve.
+ *
+ * Izdvojeno iz handlera da bi se moglo obuhvatiti jednim `try`. Ranije je izuzetak u bilo
+ * kojem koraku prekidao ostatak i ostavljao mapu bez svega — uključujući boje opasnosti.
+ */
+function buildLayers(instance: MapLibreMap) {
+  // Šrafura je obavezna (UI.md §2), ali ako platno zakaže, mapa se ne smije izgubiti.
+  // Rezerva zadržava obrazac: siva ispuna uz isprekidanu ivicu.
+  let hatch = false
+  try {
+    instance.addImage(HATCH, createHatchPattern(), { pixelRatio: 2 })
+    hatch = true
+  } catch {
+    hatch = false
+  }
+
+  instance.addSource('reaches', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  })
+
+  // Ispuna po boji iz renderera agencije. Boja stiže u podatku; ovdje se ne bira.
+  instance.addLayer({
+    id: 'reaches-fill',
+    type: 'fill',
+    source: 'reaches',
+    filter: ['!=', ['get', 'level'], 'Unknown'],
+    paint: {
+      'fill-color': ['get', 'color'],
+      // Stariji podatak je vidljivo bljeđi (UI.md §2).
+      'fill-opacity': [
+        'case',
+        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,
+        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
+        0.85,
+      ],
+    },
+  })
+
+  // Dionice bez podatka nose šrafuru, ne samo sivu ispunu. Siva sama može izgledati kao
+  // "mirno"; šrafura ne može (UI.md §2).
+  instance.addLayer({
+    id: 'reaches-no-data',
+    type: 'fill',
+    source: 'reaches',
+    filter: ['==', ['get', 'level'], 'Unknown'],
+    paint: hatch
+      ? { 'fill-pattern': HATCH, 'fill-opacity': 0.75 }
+      : { 'fill-color': '#cccccc', 'fill-opacity': 0.75 },
+  })
+
+  if (!hatch) {
+    // Kad šrafure nema, obrazac nosi ivica — boja ne smije ostati jedini nosilac (UI.md §5).
+    instance.addLayer({
+      id: 'reaches-no-data-outline',
+      type: 'line',
+      source: 'reaches',
+      filter: ['==', ['get', 'level'], 'Unknown'],
+      paint: { 'line-color': '#5c6470', 'line-width': 1.2, 'line-dasharray': [3, 2] },
+    })
+  }
+
+  instance.addLayer({
+    id: 'reaches-outline',
+    type: 'line',
+    source: 'reaches',
+    filter: ['<=', ['coalesce', ['get', 'ageRatio'], 0], 3],
+    paint: { 'line-color': '#0d1117', 'line-width': 0.6, 'line-opacity': 0.8 },
+  })
+
+  // Isprekidana ivica za zastario podatak (UI.md §2). `line-dasharray` ne prima izraze po
+  // podatku, pa zastarjele dionice dobijaju vlastiti sloj.
+  instance.addLayer({
+    id: 'reaches-outline-stale',
+    type: 'line',
+    source: 'reaches',
+    filter: ['>', ['coalesce', ['get', 'ageRatio'], 0], 3],
+    paint: {
+      'line-color': '#e6edf3',
+      'line-width': 1.4,
+      'line-opacity': 0.75,
+      'line-dasharray': [2, 2],
+    },
+  })
+
+  // Jadranski sliv — zaseban izvor i zaseban sloj. Nikad stopljen sa dionicama: AVP Sava
+  // daje ocjenu opasnosti, AVPJM je ne daje, i jedna legenda za oboje bi morala izmisliti
+  // nešto za jednu od agencija (CLAUDE.md → Šta NE raditi).
+  instance.addSource('avpjm', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  })
+
+  instance.addLayer({
+    id: 'avpjm-points',
+    type: 'circle',
+    source: 'avpjm',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4, 10, 8],
+      'circle-color': ['get', 'color'],
+      'circle-stroke-color': '#0d1117',
+      'circle-stroke-width': 1,
+      'circle-opacity': [
+        'case',
+        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,
+        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
+        0.9,
+      ],
+    },
+  })
+
+  instance.addSource('stations', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  })
+
+  // Mjerna mjesta, ne stanja.
+  //
+  // Namjerno bez ispune u boji. Registar kaže gdje se mjeri, a stanje na tim mjestima nemamo
+  // — `HYDRO_ID` ne povezuje dionice sa ovim registrom (SOURCES.md §1.7). Ispunjen krug bilo
+  // koje neutralne boje čitao bi se kao "ovdje je sve u redu", što je tačno ono što zlatno
+  // pravilo 1 zabranjuje. Prazan prsten ne tvrdi ništa.
+  instance.addLayer({
+    id: 'stations-points',
+    type: 'circle',
+    source: 'stations',
+    layout: { visibility: 'none' },
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 3, 10, 6],
+      'circle-color': 'rgba(0,0,0,0)',
+      'circle-stroke-color': '#e6edf3',
+      'circle-stroke-width': 1.5,
+    },
+  })
 }

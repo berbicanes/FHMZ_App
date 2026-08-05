@@ -28,6 +28,8 @@ async function fetchJson<T>(url: string): Promise<T> {
 export default function App() {
   const [route, navigate] = useRoute()
   const [showStations, setShowStations] = useState(route.kind === 'station')
+  // Mapa koja zakaže mora to reći. Prazna mapa bez poruke izgleda kao mapa bez opasnosti.
+  const [mapError, setMapError] = useState<string | null>(null)
 
   // TanStack Query, nikad useEffect (CLAUDE.md → Konvencije).
   // Osvježavanje na 5 minuta; izvor se mijenja na sat, pa češće nema šta stići.
@@ -164,7 +166,24 @@ export default function App() {
                 key: station.stationKey ?? '',
               })
             }
+            onError={setMapError}
           />
+
+          {mapError && (
+            <div className="absolute inset-x-4 bottom-4 z-10 rounded border border-[#7a2020] bg-[#2a1010] p-3 text-sm">
+              <p>
+                Mapa se ne prikazuje ispravno: {mapError} Podaci su i dalje tačni u tabeli
+                ispod.
+              </p>
+              <button
+                type="button"
+                onClick={() => setMapError(null)}
+                className="mt-2 rounded border border-[#7a2020] px-2 py-1 text-xs"
+              >
+                Sakrij
+              </button>
+            </div>
+          )}
 
           <div className="absolute top-3 left-3 z-10 rounded border border-[--color-border] bg-[--color-surface-raised]/95 px-3 py-2 text-sm">
             <label className="flex cursor-pointer items-center gap-2">
