@@ -31,6 +31,8 @@ Ovo je aplikacija u kojoj netačan podatak može navesti nekoga na pogrešnu odl
 docker compose up -d                  # Postgres + PostGIS + Redis — TRAŽE GA Data testovi
 dotnet build
 dotnet test                           # Data testovi padaju bez baze, i to namjerno
+                                      # Testovi rade nad `vodostaji_test`, NIKAD nad `vodostaji`.
+                                      # Brišu tabele; ime baze mora završavati na `_test`.
 dotnet run --project src/Vodostaji.Api
 
 # Migracije. Startup je zasad Data jer Api još ne postoji — kad dođe, prebaci na njega.

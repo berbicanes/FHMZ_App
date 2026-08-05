@@ -98,6 +98,14 @@ Riješeno eksplicitnim `?worker&url` uvozom i `setWorkerUrl` (`src/lib/maplibre-
 Worker nije samostalan — uvozi `maplibre-gl-shared.mjs` — pa mu treba pakovanje sa
 zavisnostima, ne kopiranje fajla.
 
+**Izgubljena historija (2026-08-05):** integracijski testovi su gađali istu bazu koju koristi
+aplikacija i brišu tabele između slučajeva. Jedan `dotnet test` je obrisao svu prikupljenu
+historiju. **Nepovratno** — AVP Sava ne objavljuje arhivu, pa se ta mjerenja ne mogu ponovo
+povući; skupljanje počinje ispočetka.
+
+Popravljeno: testovi rade nad `vodostaji_test`, koju sami prave, a brisanje je zaključano
+provjerom da ime baze završava na `_test`. Ista greška se više ne može ponoviti.
+
 **Pouka:** greška u infrastrukturi prikaza je u ovoj aplikaciji greška o sigurnosti. Prazna
 mapa i mapa bez opasnosti izgledaju identično. Zato je uz popravku dodano i da se svaka
 greška mape ispiše **na ekranu**, ne u konzoli.
