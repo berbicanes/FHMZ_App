@@ -229,11 +229,22 @@ konvertuje, adapter to ne mora znati. Zato je konvencija `Utc`, a ne `LocalWithD
 - Detalj: `https://avpjm.jadran.ba/vodomjerne_stanice/{id}` (`/1` = Mostar, Neretva)
 - Kontakt: `jsliv@jadran.ba`
 
-**Ovo nije server-rendered HTML.** Stack je Laravel + Vue (Vuetify). Stranica liste ne sadrži
-nijednu tabelu, nijedan link na stanicu, nijedno pojavljivanje riječi "stanic" — sve se crta
-u browseru. **Scraper nad listom ne može raditi.**
+**Ispravka ranije tvrdnje (2026-08-05).** U Fazi 0 je ovdje pisalo da stranica liste ne sadrži
+podatke i da "scraper nad listom ne može raditi". **To je bilo pogrešno.** Tražio sam oblik koji
+sam očekivao — tabele, linkove, riječ "stanic" — a podaci su HTML-escapovan JSON unutar Vue
+atributa, gdje se nijedno od toga ne pojavljuje. Pouka: traži podatak, ne njegov očekivani oblik.
 
-Stranica detalja jeste server-rendered i **nosi cijeli podatak u Vue propovima**:
+**Lista nosi cijeli registar u jednom zahtjevu.** Stack je Laravel + Vue (Vuetify), stranice su
+server-rendered, a podaci putuju kroz Vue propove:
+
+- `<stations-grid :items="…">` i `<stations-map :stations="…">` na listi — **20 stanica**
+  sa trenutnim vrijednostima, pragovima, lokacijama i vodotocima
+- Detalj nosi istu strukturu plus punu seriju
+
+Jedan zahtjev na `/vodomjerne_stanice` dakle daje cijeli sliv. Detalj se poziva samo kad
+treba historija.
+
+Stranica detalja **nosi cijeli podatak u Vue propovima**:
 
 - `<station-map :station="…">` i `<station-data-table :data="…">` — JSON objekat stanice
 - `<station-chart :readings="…">` — puna serija kao `epoch<TAB>vrijednost` po liniji

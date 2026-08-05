@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using Vodostaji.Core;
+using Vodostaji.Ingest;
+
 
 namespace Vodostaji.Ingest.AvpSava;
 
@@ -276,7 +278,3 @@ public static class AvpSavaReachParser
             ? epoch
             : null;
 }
-
-/// <summary>Odgovor izvora se nije mogao pročitati kao cjelina. Ruši jedan run jednog izvora,
-/// nikad ostale — zlatno pravilo 5.</summary>
-public sealed class SourceResponseException(string message) : Exception(message);

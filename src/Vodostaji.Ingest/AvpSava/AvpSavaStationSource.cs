@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Vodostaji.Core;
+using Vodostaji.Ingest;
 
 namespace Vodostaji.Ingest.AvpSava;
 
