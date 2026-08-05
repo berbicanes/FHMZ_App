@@ -43,7 +43,7 @@ metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor š
 
 ---
 
-## Faza 2 — Stanice i historija ⬅️ **TRENUTNA**
+## Faza 2 — Stanice i historija ✅ **ZAVRŠENA 2026-08-05**
 
 - [x] Registar stanica iz `ISV_BIH_2009_javnakarta/MapServer/1`
 - [x] Tačke stanica kao **zaseban sloj** — veze sa dionicama nema, vidi SOURCES.md §1.7
@@ -54,9 +54,9 @@ metadata sloja i jednom upitu, ne u 24-satnom mjerenju — **prvo pitaj izvor š
 - [x] Pretraga po rijeci i po mjestu, neosjetljiva na dijakritiku i na `dj`/`đ`
 - [x] Prikaz starosti podatka (opacity, ivica, šrafura) — urađeno u Fazi 1
 
-**Otvoreno:** produkcijski server mora vraćati `index.html` za `/dionica/*` i `/stanica/*`.
-U razvoju to radi Vite; kad Api počne servirati SPA, treba mu fallback ruta. Bez toga
-podijeljen link otvara 404 — a deep linkovi su glavni kanal distribucije (UI.md §4).
+**Riješeno:** Api servira sagrađeni SPA i ima fallback na `index.html`, pa `/dionica/*` i
+`/stanica/*` rade i bez Vitea. Fallback namjerno **ne** hvata `/api/*` — API poziv koji dobije
+`index.html` izgledao bi kao uspjeh sa čudnim tijelom.
 
 **Nalaz iz podataka, 2026-08-05:** dionica `Fojnička rijeka` je u tri uzastopna sata dala
 120 → 160 → −28.3 cm. Izvor je tako objavio i mi to vjerno čuvamo, ali skok od 188 cm za sat
@@ -73,12 +73,14 @@ napomenu. Provjereno: Fojnička (Δ −188 cm, raspon 120) se označava, a rast 
 Zenici (raspon 270) se ne označava. Dionica bez pragova ne dobija napomenu jer nemamo skalu
 s kojom bismo poredili.
 
-**Napomena:** web nema test runner. `normalise` i `matches` su provjereni ručno, ali bi
-trebali imati testove; izbor alata (Vitest?) je pitanje za dogovor jer nije u stacku.
+**Riješeno:** web ima Vitest, 36 testova nad čistom logikom (pretraga, starost, trend,
+napomena o promjeni, rute). Poznato ograničenje zapisano u testu: poklapanje je po podnizu,
+pa drugi padež ne nalazi — "pjesacki" ne nalazi "pješačkog". Stemmer za bosanski je zaseban
+posao; zapisano da se zna da je izbor, ne previd.
 
 ---
 
-## Faza 3 — Jadranski sliv
+## Faza 3 — Jadranski sliv ⬅️ **TRENUTNA**
 
 Prvi put dva izvora u istoj mapi. **Ovdje se testira sav rad oko nejednake gustine i frekvencije** — ako je nešto pogrešno u modelu, ovdje puca.
 

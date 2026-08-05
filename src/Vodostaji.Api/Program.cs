@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Vodostaji.Api;
@@ -138,6 +139,43 @@ app.MapGet("/api/v1/sources", (SourceIngestRunner runner) => Results.Ok(new[] { 
    .WithName("GetSources");
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+// Sagrađeni SPA, kad postoji.
+//
+// `/dionica/{key}` i `/stanica/{key}` su rute browsera, ne servera — bez fallbacka na
+// `index.html` podijeljen link daje 404, a deep linkovi su po UI.md §4 glavni kanal
+// distribucije. U razvoju ovo radi Vite, pa se blok preskače ako builda nema.
+var webRoot = builder.Configuration["WebRoot"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "..", "Vodostaji.Web", "dist");
+
+if (Directory.Exists(webRoot))
+{
+    var files = new PhysicalFileProvider(Path.GetFullPath(webRoot));
+
+    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
+    app.UseStaticFiles(new StaticFileOptions { FileProvider = files });
+
+    // Fallback ide **samo** na rute koje nisu API. `/api/...` koji ne postoji mora ostati
+    // 404, jer bi `index.html` kao odgovor na API poziv izgledao kao uspjeh sa čudnim tijelom.
+    app.MapFallback(async context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        context.Response.ContentType = "text/html; charset=utf-8";
+        await context.Response.SendFileAsync(files.GetFileInfo("index.html"));
+    });
+
+    app.Logger.LogInformation("SPA se servira iz {WebRoot}.", Path.GetFullPath(webRoot));
+}
+else
+{
+    app.Logger.LogInformation(
+        "SPA build nije nađen u {WebRoot}; u razvoju ga servira Vite.", webRoot);
+}
 
 app.Run();
 

@@ -2,10 +2,10 @@
 
 Jedna mapa sa stanjem svih rijeka u BiH, u realnom vremenu, besplatno. Danas su podaci razbijeni na četiri agencije i tri sajta; korisnik ne treba znati ništa o slivovima ni entitetima.
 
-**Trenutno stanje: `FAZA 1 ZAVRŠENA 2026-08-05 — vertikalni presjek na AVP Savi radi.`**
-Core, Ingest, Data, Api i Web stoje; 47 testova prolazi. Ingest se vrti na 5 min sa osiguračem,
-mapa se servira kao statički GeoJSON, disclaimer i atribucija su na mjestu. Zona `DATE_TIME`-a
-je **riješena** (SOURCES.md §1.6). Otvoreno u Fazu 2: veza `HYDRO_ID` ↔ `HID_ID`.
+**Trenutno stanje: `FAZA 2 ZAVRŠENA 2026-08-05 — stanice, historija, graf, deep linkovi, pretraga.`**
+60 testova u .NET-u i 36 u web-u. Api servira i SPA, pa deep linkovi rade i bez Vitea.
+Veza `HYDRO_ID` ↔ `HID_ID` **ne postoji** (SOURCES.md §1.7) — dionice i stanice su zasebni
+slojevi. Sljedeće: Faza 3, Jadranski sliv.
 Ažuriraj ovu liniju pri svakom prelasku faze. Ako opis ispod ne odgovara stvarnom kodu — stvarnost pobjeđuje, popravi fajl u istom commitu.
 
 ---
@@ -44,6 +44,8 @@ cd src/Vodostaji.Web
 npm run dev
 npm run build
 npm run typecheck
+npm test                              # Vitest, čista logika bez DOM-a
+npm run generate:api                  # TS tipovi iz OpenAPI sheme — API mora raditi
 ```
 
 Ako komanda ne postoji jer faza još nije došla — dodaj je ovdje čim je napraviš.
@@ -52,7 +54,7 @@ Ako komanda ne postoji jer faza još nije došla — dodaj je ovdje čim je napr
 
 ## Stack
 
-.NET 8 / ASP.NET Core Minimal API · PostgreSQL 16 + PostGIS · Redis · React 18 + TypeScript + Vite · **MapLibre GL JS** · Tailwind · Recharts · TanStack Query · AngleSharp (scraping) · Serilog · xUnit · Azure App Service.
+.NET 8 / ASP.NET Core Minimal API · PostgreSQL 16 + PostGIS · Redis · React 18 + TypeScript + Vite · **MapLibre GL JS** · Tailwind · Recharts · TanStack Query · AngleSharp (scraping) · Serilog · xUnit · Vitest · Azure App Service.
 
 Ne uvodi nove biblioteke bez pitanja. Obrazloži zašto prije nego dodaš.
 
