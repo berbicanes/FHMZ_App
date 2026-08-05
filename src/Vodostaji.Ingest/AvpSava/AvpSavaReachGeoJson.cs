@@ -101,12 +101,14 @@ public static class AvpSavaReachGeoJson
 
             AgeMinutes = age is null ? null : (long)Math.Round(age.Value.TotalMinutes),
             ExpectedIntervalMinutes = (long)reading.Station.ExpectedInterval.TotalMinutes,
+            PublicationLagMinutes = (long)reading.Station.TypicalPublicationLag.TotalMinutes,
 
-            // Starost u očekivanim intervalima. UI.md §2 dijeli prikaz na <1×, 1–3× i >3×,
-            // pa mu se daje omjer umjesto gotove ocjene — prag prikaza je odluka UI-a.
-            AgeRatio = age is null
-                ? null
-                : Math.Round(age.Value / reading.Station.ExpectedInterval, 2),
+            // Broj propuštenih ciklusa, mjeren od trenutka kad je podatak realno mogao stići.
+            // UI.md §2 dijeli prikaz na <1×, 1–3× i >3×, pa mu se daje broj umjesto gotove
+            // ocjene — prag prikaza je odluka UI-a.
+            AgeRatio = reading.Station.MissedCycles(measurement?.MeasuredAt, now) is { } missed
+                ? Math.Round(missed, 2)
+                : null,
 
             // Atribucija po dionici, ne u footeru (LEGAL.md §2.1).
             AgencyName = reading.Station.Attribution.AgencyName,

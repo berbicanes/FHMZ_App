@@ -122,6 +122,8 @@ export interface components {
             ageMinutes?: number | null;
             /** Format: int64 */
             expectedIntervalMinutes: number;
+            /** Format: int64 */
+            publicationLagMinutes: number;
             /** Format: double */
             ageRatio?: number | null;
             agencyName: string | null;

@@ -47,7 +47,8 @@ public static class AvpSavaReachParser
         string body,
         SourceClock clock,
         Attribution attribution,
-        TimeSpan expectedInterval)
+        TimeSpan expectedInterval,
+        TimeSpan publicationLag = default)
     {
         var readings = new List<StationReading>();
         var skipped = new List<SkippedStation>();
@@ -87,7 +88,8 @@ public static class AvpSavaReachParser
 
             try
             {
-                readings.Add(ReadOne(attributes.Value, key, clock, attribution, expectedInterval, unrecognised));
+                readings.Add(ReadOne(
+                    attributes.Value, key, clock, attribution, expectedInterval, publicationLag, unrecognised));
             }
             catch (Exception ex) when (ex is not SourceResponseException)
             {
@@ -111,10 +113,11 @@ public static class AvpSavaReachParser
         SourceClock clock,
         Attribution attribution,
         TimeSpan expectedInterval,
+        TimeSpan publicationLag,
         SortedSet<string> unrecognised)
     {
         var status = String(attributes, "CURRENT_STATUS");
-        var station = BuildStation(attributes, key, attribution, expectedInterval);
+        var station = BuildStation(attributes, key, attribution, expectedInterval, publicationLag);
         var thresholds = BuildThresholds(attributes, attribution.AgencyName);
         var label = status ?? "";
 
@@ -169,7 +172,11 @@ public static class AvpSavaReachParser
         };
 
     private static Station BuildStation(
-        JsonElement attributes, string key, Attribution attribution, TimeSpan expectedInterval)
+        JsonElement attributes,
+        string key,
+        Attribution attribution,
+        TimeSpan expectedInterval,
+        TimeSpan publicationLag)
     {
         var description = String(attributes, "description");
 
@@ -195,6 +202,7 @@ public static class AvpSavaReachParser
             // poligoni idu u mapu kao zaseban GeoJSON sloj, netaknuti.
             Coordinates = null,
             ExpectedInterval = expectedInterval,
+            TypicalPublicationLag = publicationLag,
             Attribution = attribution,
         };
     }

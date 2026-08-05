@@ -45,7 +45,14 @@ public sealed record ReachProperties
 
     public required long ExpectedIntervalMinutes { get; init; }
 
-    /// <summary>Starost izražena u očekivanim intervalima. UI.md §2 iz ovoga bira prikaz.</summary>
+    /// <summary>Uobičajeno kašnjenje objave kod ovog izvora. UI ga prikazuje da bi korisnik
+    /// znao zašto ni najsvježiji podatak nije od maloprije.</summary>
+    public required long PublicationLagMinutes { get; init; }
+
+    /// <summary>
+    /// Koliko je ciklusa propušteno, mjereno od trenutka kad je podatak realno mogao stići.
+    /// Nula znači najsvježije moguće. UI.md §2 iz ovoga bira prikaz.
+    /// </summary>
     public double? AgeRatio { get; init; }
 
     public required string AgencyName { get; init; }

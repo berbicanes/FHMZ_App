@@ -52,6 +52,7 @@ public sealed class EfReadingStore(VodostajiDbContext context) : IReadingStore
                 Longitude = station.Coordinates?.Longitude,
                 GaugeZero = station.GaugeZero,
                 ExpectedIntervalSeconds = (long)station.ExpectedInterval.TotalSeconds,
+                PublicationLagSeconds = (long)station.TypicalPublicationLag.TotalSeconds,
                 AgencyName = station.Attribution.AgencyName,
                 AgencyUrl = station.Attribution.AgencyUrl.ToString(),
                 SourceUrl = station.Attribution.SourceUrl?.ToString(),
@@ -66,6 +67,7 @@ public sealed class EfReadingStore(VodostajiDbContext context) : IReadingStore
         row.River = station.River;
         row.GaugeZero = station.GaugeZero;
         row.ExpectedIntervalSeconds = (long)station.ExpectedInterval.TotalSeconds;
+        row.PublicationLagSeconds = (long)station.TypicalPublicationLag.TotalSeconds;
         row.LastSeenAt = fetchedAt;
 
         // Koordinate se ne brišu ako ih odgovor ovaj put nije donio. Jedna stanica AVP Save

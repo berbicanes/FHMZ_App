@@ -87,6 +87,18 @@ export function ReachDetail({
           <dt className="text-[--color-text-muted]">Izvor kaže</dt>
           <dd className="text-right">{reach.statusLabelOriginal}</dd>
         </div>
+
+        {/* Bez ovoga podatak star dva sata izgleda kao zastoj, a nije — izvor jednostavno
+            objavljuje sa kašnjenjem. Prešutjeti to znači pustiti korisnika da pogrešno
+            procijeni koliko je informacija aktuelna. */}
+        {reach.publicationLagMinutes > 0 && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-[--color-text-muted]">Kašnjenje objave</dt>
+            <dd className="text-right">
+              oko {Math.round(reach.publicationLagMinutes / 60)} h
+            </dd>
+          </div>
+        )}
       </dl>
 
       {reach.thresholds && reach.thresholds.length > 0 && (

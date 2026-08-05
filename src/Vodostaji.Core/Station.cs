@@ -37,5 +37,33 @@ public sealed record Station
     /// </summary>
     public required TimeSpan ExpectedInterval { get; init; }
 
+    /// <summary>
+    /// Koliko obično prođe od trenutka mjerenja do trenutka kad podatak postane dostupan nama.
+    ///
+    /// Odvojeno od <see cref="ExpectedInterval"/> namjerno. AVP Sava mjeri na sat ali objavljuje
+    /// 85–115 minuta kasnije, pa je i savršeno zdravo očitanje uvijek staro oko dva sata. Bez
+    /// ovog polja svaka dionica trajno stoji kao "kasni", korisnik se navikne da je signal
+    /// uvijek upaljen, i prestane ga gledati — što je gore nego da ga nema.
+    ///
+    /// Starost se zato mjeri **od trenutka kad je podatak realno mogao stići**, ne od mjerenja.
+    /// Ono što se time prikazuje je broj propuštenih ciklusa, a to je ono što UI.md §2 i traži.
+    /// </summary>
+    public TimeSpan TypicalPublicationLag { get; init; } = TimeSpan.Zero;
+
+    /// <summary>
+    /// Koliko je ciklusa propušteno. Nula znači da je podatak najsvježiji koji uopšte može biti.
+    /// Vraća null kad mjerenja nema — odsustvo podatka nije stepen starosti.
+    /// </summary>
+    public double? MissedCycles(DateTimeOffset? measuredAt, DateTimeOffset now)
+    {
+        if (measuredAt is not { } measured || ExpectedInterval <= TimeSpan.Zero)
+        {
+            return null;
+        }
+
+        var beyondLag = (now - measured) - TypicalPublicationLag;
+        return beyondLag <= TimeSpan.Zero ? 0 : beyondLag / ExpectedInterval;
+    }
+
     public required Attribution Attribution { get; init; }
 }

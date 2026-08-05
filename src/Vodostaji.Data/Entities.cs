@@ -25,6 +25,10 @@ public class StationRow
     /// <summary>Očekivani razmak između mjerenja, u sekundama. Po stanici, ne po izvoru.</summary>
     public required long ExpectedIntervalSeconds { get; set; }
 
+    /// <summary>Uobičajeno kašnjenje objave, u sekundama. Odvojeno od kadence mjerenja jer
+    /// izvor može mjeriti često a objavljivati sa zastojem.</summary>
+    public long PublicationLagSeconds { get; set; }
+
     public required string AgencyName { get; set; }
 
     public required string AgencyUrl { get; set; }

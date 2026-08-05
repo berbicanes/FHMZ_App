@@ -61,6 +61,14 @@ public sealed class AvpSavaArcGisSource(HttpClient httpClient, TimeProvider? tim
     /// <summary>Sat je kadenca izvora, ne naša pretpostavka o svježini.</summary>
     public static TimeSpan ExpectedInterval => TimeSpan.FromHours(1);
 
+    /// <summary>
+    /// Mjereno kroz `--watch` 2026-08-04: mjerenje sa oznakom punog sata pojavi se 85–115
+    /// minuta kasnije. Uzeta je gornja granica, pa zdravo očitanje ispada svježe a stvarni
+    /// zastoj se i dalje vidi. Da ovoga nema, svaka dionica bi trajno stajala kao "kasni"
+    /// i signal bi izgubio smisao.
+    /// </summary>
+    public static TimeSpan TypicalPublicationLag => TimeSpan.FromMinutes(115);
+
     public async Task<SourceFetchResult> FetchAsync(CancellationToken cancellationToken)
     {
         var fetchedAt = _time.GetUtcNow();
@@ -77,7 +85,8 @@ public sealed class AvpSavaArcGisSource(HttpClient httpClient, TimeProvider? tim
                 .ReadAsStringAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            var parsed = AvpSavaReachParser.Parse(body, Clock, Attribution, ExpectedInterval);
+            var parsed = AvpSavaReachParser.Parse(
+                body, Clock, Attribution, ExpectedInterval, TypicalPublicationLag);
 
             return new SourceFetchResult
             {

@@ -155,8 +155,17 @@ Baza ga matchuje na `2026-08-05 00:00`, dakle drži **lokalno zidno vrijeme**. A
 podatke prikazivalo **dva sata starijim nego što jesu**. Pesimizam je bio ispravan izbor dok
 se nije znalo, ali nije zamjena za provjeru.
 
-**Kašnjenje objave je 85–115 minuta**, mjereno kroz `--watch`: mjerenje sa oznakom pune sate
+**Kašnjenje objave je 85–115 minuta**, mjereno kroz `--watch`: mjerenje sa oznakom punog sata
 pojavi se oko sat i po kasnije. Kadenca je satna, pa `ExpectedInterval = 1h` stoji.
+
+To dvoje se **ne smije spojiti u jedan broj.** Kadenca je koliko često izvor mjeri; kašnjenje
+je koliko treba da mjerenje stigne do nas. Pošto je zdravo očitanje uvijek staro oko dva sata,
+starost se mjeri **od trenutka kad je podatak realno mogao stići** (`Station.MissedCycles`).
+Bez toga svaka dionica trajno stoji kao "kasni", korisnik se navikne da je signal uvijek
+upaljen, i prestane ga gledati — što je gore nego da ga nema.
+
+Izmjereno na svih 45 dionica nakon ispravke: 27 svježih, 3 sa propuštenim ciklusima,
+3 zastarjele, 12 bez podatka. Prije ispravke je **sve** stajalo kao zastarjelo.
 
 `respectsDaylightSaving: true` znači da baza zimi drži CET a ljeti CEST — ali pošto servis
 konvertuje, adapter to ne mora znati. Zato je konvencija `Utc`, a ne `LocalWithDst`.

@@ -47,8 +47,9 @@ export function Legend({ agencyName }: { agencyName: string }) {
       </ul>
 
       <p className="mt-3 text-xs leading-relaxed text-[--color-text-muted]">
-        Isprekidana ivica označava podatak stariji od tri očekivana intervala.
-        Bljeđa ispuna znači da podatak kasni.
+        Bljeđa ispuna znači da je jedno ili više mjerenja izostalo; isprekidana ivica da su
+        izostala više od tri. Starost se računa od trenutka kad podatak realno može stići,
+        jer izvor objavljuje sa zastojem — svjež podatak zato ne znači i podatak od maloprije.
       </p>
     </section>
   )

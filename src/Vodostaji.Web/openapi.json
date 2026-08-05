@@ -172,6 +172,7 @@
           "level",
           "levelLabel",
           "name",
+          "publicationLagMinutes",
           "sourceId",
           "stationKey",
           "statusLabelOriginal"
@@ -230,6 +231,10 @@
             "nullable": true
           },
           "expectedIntervalMinutes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "publicationLagMinutes": {
             "type": "integer",
             "format": "int64"
           },
