@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import type { ReachCollection, ReachProperties, SourceStatus } from './api/types'
+import type {
+  ReachCollection,
+  ReachProperties,
+  SourceStatus,
+  StationCollection,
+  StationProperties,
+} from './api/types'
 import { DisclaimerBar, PersistentDisclaimer } from './components/DisclaimerBar'
 import { Legend } from './components/Legend'
 import { ReachDetail } from './components/ReachDetail'
 import { ReachMap } from './components/ReachMap'
 import { ReachTable } from './components/ReachTable'
+import { StationDetail } from './components/StationDetail'
 import { formatMeasuredAt } from './lib/freshness'
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -18,6 +25,8 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 export default function App() {
   const [selected, setSelected] = useState<ReachProperties | null>(null)
+  const [selectedStation, setSelectedStation] = useState<StationProperties | null>(null)
+  const [showStations, setShowStations] = useState(false)
 
   // TanStack Query, nikad useEffect (CLAUDE.md → Konvencije).
   // Osvježavanje na 5 minuta; izvor se mijenja na sat, pa češće nema šta stići.
@@ -25,6 +34,14 @@ export default function App() {
     queryKey: ['reaches'],
     queryFn: () => fetchJson<ReachCollection>('/api/v1/geojson/reaches'),
     refetchInterval: 5 * 60 * 1000,
+  })
+
+  // Registar se mijenja rijetko; povlači se samo kad je sloj uključen.
+  const stations = useQuery({
+    queryKey: ['stations'],
+    queryFn: () => fetchJson<StationCollection>('/api/v1/geojson/stations'),
+    enabled: showStations,
+    staleTime: 60 * 60 * 1000,
   })
 
   const sources = useQuery({
@@ -74,12 +91,47 @@ export default function App() {
             </div>
           )}
 
-          <ReachMap data={reaches.data} onSelect={setSelected} />
+          <ReachMap
+            data={reaches.data}
+            stations={stations.data}
+            showStations={showStations}
+            onSelect={(reach) => {
+              setSelected(reach)
+              setSelectedStation(null)
+            }}
+            onSelectStation={(station) => {
+              setSelectedStation(station)
+              setSelected(null)
+            }}
+          />
+
+          <div className="absolute top-3 left-3 z-10 rounded border border-[--color-border] bg-[--color-surface-raised]/95 px-3 py-2 text-sm">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={showStations}
+                onChange={(event) => setShowStations(event.target.checked)}
+              />
+              <span>Mjerna mjesta</span>
+              {stations.data && (
+                <span className="text-xs text-[--color-text-muted]">
+                  ({stations.data.features.length})
+                </span>
+              )}
+            </label>
+          </div>
         </main>
 
         <div className="flex w-full flex-col overflow-y-auto border-t border-[--color-border] lg:w-[26rem] lg:border-t-0 lg:border-l">
           {selected && (
             <ReachDetail reach={selected} onClose={() => setSelected(null)} />
+          )}
+
+          {selectedStation && (
+            <StationDetail
+              station={selectedStation}
+              onClose={() => setSelectedStation(null)}
+            />
           )}
 
           <div className="space-y-5 p-4">
@@ -99,6 +151,21 @@ export default function App() {
                     <p className="mt-1 leading-relaxed">{source.clockEvidence}</p>
                   </details>
                 )}
+              </section>
+            )}
+
+            {/* Registar mora objasniti razliku između broja stanica i broja tačaka na mapi,
+                inače korisnik koji broji dobije drugi rezultat od nas. */}
+            {showStations && stations.data && (
+              <section aria-label="Registar mjernih mjesta" className="text-xs text-[--color-text-muted]">
+                <h2 className="mb-1 font-semibold tracking-wide uppercase">Mjerna mjesta</h2>
+                <p className="leading-relaxed">
+                  Registar ima {stations.data.meta.stationCount} stanica; na mapi ih je{' '}
+                  {stations.data.features.length}. Razlika su{' '}
+                  {stations.data.meta.withoutGeometry} bez koordinata i{' '}
+                  {stations.data.meta.withoutName} bez naziva. Prsten označava mjesto mjerenja,
+                  ne stanje — stanje se čita na dionici.
+                </p>
               </section>
             )}
 

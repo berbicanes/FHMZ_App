@@ -26,6 +26,26 @@
         }
       }
     },
+    "/api/v1/geojson/stations": {
+      "get": {
+        "tags": [
+          "Vodostaji.Api"
+        ],
+        "operationId": "GetStations",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationFeatureCollection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/sources": {
       "get": {
         "tags": [
@@ -343,6 +363,130 @@
           "isHealthy": {
             "type": "boolean",
             "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StationFeature": {
+        "required": [
+          "geometry",
+          "properties"
+        ],
+        "type": "object",
+        "properties": {
+          "geometry": {
+            "nullable": true
+          },
+          "properties": {
+            "$ref": "#/components/schemas/StationProperties"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StationFeatureCollection": {
+        "required": [
+          "features",
+          "meta"
+        ],
+        "type": "object",
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/StationMeta"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StationFeature"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "StationMeta": {
+        "required": [
+          "fetchedAt",
+          "sourceId",
+          "stationCount",
+          "withoutGaugeZero",
+          "withoutGeometry",
+          "withoutName"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "fetchedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stationCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutGeometry": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutGaugeZero": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "withoutName": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StationProperties": {
+        "required": [
+          "agencyName",
+          "agencyUrl",
+          "name",
+          "sourceId"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "stationKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "nullable": true
+          },
+          "stationType": {
+            "type": "string",
+            "nullable": true
+          },
+          "gaugeZero": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "gaugeBoardCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "agencyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "agencyUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

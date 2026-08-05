@@ -7,7 +7,12 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { ReachCollection, ReachProperties } from '../api/types'
+import type {
+  ReachCollection,
+  ReachProperties,
+  StationCollection,
+  StationProperties,
+} from '../api/types'
 import { createHatchPattern } from '../lib/hatch'
 
 const HATCH = 'hatch-no-data'
@@ -37,14 +42,19 @@ const BASEMAP: StyleSpecification = {
 
 interface Props {
   data: ReachCollection | undefined
+  stations: StationCollection | undefined
+  showStations: boolean
   onSelect: (properties: ReachProperties) => void
+  onSelectStation: (properties: StationProperties) => void
 }
 
-export function ReachMap({ data, onSelect }: Props) {
+export function ReachMap({ data, stations, showStations, onSelect, onSelectStation }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
+  const onSelectStationRef = useRef(onSelectStation)
+  onSelectStationRef.current = onSelectStation
 
   useEffect(() => {
     if (!container.current || map.current) return
@@ -119,6 +129,42 @@ export function ReachMap({ data, onSelect }: Props) {
         },
       })
 
+      instance.addSource('stations', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      })
+
+      // Mjerna mjesta, ne stanja.
+      //
+      // Namjerno bez ispune u boji. Registar kaže gdje se mjeri, a stanje na tim mjestima
+      // nemamo — `HYDRO_ID` ne povezuje dionice sa ovim registrom (SOURCES.md §1.7).
+      // Ispunjen krug bilo koje neutralne boje čitao bi se kao "ovdje je sve u redu", što je
+      // tačno ono što zlatno pravilo 1 zabranjuje. Prazan prsten ne tvrdi ništa.
+      instance.addLayer({
+        id: 'stations-points',
+        type: 'circle',
+        source: 'stations',
+        layout: { visibility: 'none' },
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 3, 10, 6],
+          'circle-color': 'transparent',
+          'circle-stroke-color': '#e6edf3',
+          'circle-stroke-width': 1.5,
+          'circle-opacity': 1,
+        },
+      })
+
+      instance.on('click', 'stations-points', (event) => {
+        const feature = event.features?.[0] as MapGeoJSONFeature | undefined
+        if (feature) onSelectStationRef.current(feature.properties as unknown as StationProperties)
+      })
+      instance.on('mouseenter', 'stations-points', () => {
+        instance.getCanvas().style.cursor = 'pointer'
+      })
+      instance.on('mouseleave', 'stations-points', () => {
+        instance.getCanvas().style.cursor = ''
+      })
+
       for (const layer of ['reaches-fill', 'reaches-no-data']) {
         instance.on('click', layer, (event) => {
           const feature = event.features?.[0] as MapGeoJSONFeature | undefined
@@ -152,6 +198,36 @@ export function ReachMap({ data, onSelect }: Props) {
     if (instance.isStyleLoaded()) apply()
     else instance.once('load', apply)
   }, [data])
+
+  useEffect(() => {
+    const instance = map.current
+    if (!instance || !stations) return
+
+    const apply = () => {
+      const source = instance.getSource('stations') as GeoJSONSource | undefined
+      source?.setData(stations)
+    }
+
+    if (instance.isStyleLoaded()) apply()
+    else instance.once('load', apply)
+  }, [stations])
+
+  useEffect(() => {
+    const instance = map.current
+    if (!instance) return
+
+    const apply = () => {
+      if (!instance.getLayer('stations-points')) return
+      instance.setLayoutProperty(
+        'stations-points',
+        'visibility',
+        showStations ? 'visible' : 'none',
+      )
+    }
+
+    if (instance.isStyleLoaded()) apply()
+    else instance.once('load', apply)
+  }, [showStations])
 
   return (
     <div

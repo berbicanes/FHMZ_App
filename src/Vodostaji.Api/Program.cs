@@ -28,6 +28,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 // Ime i adresa stoje na jednom mjestu, kao i u `tools/Probe`.
 builder.Services.AddHttpClient<AvpSavaArcGisSource>(ConfigureSourceClient);
 builder.Services.AddHttpClient<AvpSavaGeometrySource>(ConfigureSourceClient);
+builder.Services.AddHttpClient<AvpSavaStationSource>(ConfigureSourceClient);
 
 builder.Services.AddSingleton<SourceIngestRunner>(services => new SourceIngestRunner(
     services.GetRequiredService<AvpSavaArcGisSource>(),
@@ -36,6 +37,12 @@ builder.Services.AddSingleton<SourceIngestRunner>(services => new SourceIngestRu
 builder.Services.AddSingleton(services => new ReachMapFile(
     Path.Combine(builder.Environment.ContentRootPath, "data", "reaches.geojson"),
     services.GetRequiredService<ILogger<ReachMapFile>>()));
+
+// Registar stanica je zaseban fajl jer je i zaseban sloj. Dionice i stanice se ne spajaju
+// (SOURCES.md §1.7), pa se ne spajaju ni u jedan odgovor.
+builder.Services.AddSingleton(services => new StationMapFile(
+    Path.Combine(builder.Environment.ContentRootPath, "data", "stations.geojson"),
+    services.GetRequiredService<ILogger<StationMapFile>>()));
 
 builder.Services.AddHostedService<IngestHostedService>();
 
@@ -86,6 +93,20 @@ app.MapGet("/api/v1/geojson/reaches", async (ReachMapFile file, CancellationToke
    // generisali iz istog izvora iz kojeg backend gradi odgovor.
    .Produces<ReachFeatureCollection>(StatusCodes.Status200OK, "application/geo+json")
    .WithName("GetReaches");
+
+// Registar mjernih mjesta. Nema status ni boju — kaže gdje se mjeri, ne kakvo je stanje.
+app.MapGet("/api/v1/geojson/stations", async (StationMapFile file, CancellationToken ct) =>
+{
+    var geoJson = await file.ReadAsync(ct);
+
+    return geoJson is null
+        ? Results.Problem(
+            "Registar stanica još nije povučen.",
+            statusCode: StatusCodes.Status503ServiceUnavailable)
+        : Results.Text(geoJson, "application/geo+json");
+})
+   .Produces<StationFeatureCollection>(StatusCodes.Status200OK, "application/geo+json")
+   .WithName("GetStations");
 
 // Stanje izvora, vidljivo u UI-u. Ovdje se vidi razlika između "jug je prazan"
 // i "jug je bez podatka", i ovdje stoji dokaz za pretpostavku o vremenskoj zoni.

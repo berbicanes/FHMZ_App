@@ -15,7 +15,9 @@ public sealed class IngestHostedService(
     IServiceProvider services,
     SourceIngestRunner runner,
     AvpSavaGeometrySource geometrySource,
+    AvpSavaStationSource stationSource,
     ReachMapFile mapFile,
+    StationMapFile stationFile,
     TimeProvider timeProvider,
     ILogger<IngestHostedService> logger)
     : BackgroundService
@@ -26,6 +28,7 @@ public sealed class IngestHostedService(
 
     private IReadOnlyDictionary<string, string> _geometry = new Dictionary<string, string>();
     private DateTimeOffset? _geometryFetchedAt;
+    private DateTimeOffset? _stationsFetchedAt;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -55,6 +58,7 @@ public sealed class IngestHostedService(
     private async Task RunCycleAsync(CancellationToken cancellationToken)
     {
         await EnsureGeometryAsync(cancellationToken).ConfigureAwait(false);
+        await EnsureStationsAsync(cancellationToken).ConfigureAwait(false);
 
         // Store se rješava po ciklusu jer DbContext ima scoped životni vijek, a
         // pozadinski servis je singleton.
@@ -120,6 +124,36 @@ public sealed class IngestHostedService(
         {
             // Stara geometrija je i dalje dobra — poligoni se ne mijenjaju često.
             logger.LogWarning(ex, "Geometrija nije osvježena, koristi se prethodna.");
+        }
+    }
+
+    /// <summary>
+    /// Registar mjernih mjesta. Osvježava se jednom dnevno i **ne zavisi od uspjeha ingesta** —
+    /// stanice postoje i kad izvor te minute ne odgovara na upit o stanju.
+    /// </summary>
+    private async Task EnsureStationsAsync(CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+
+        if (_stationsFetchedAt is { } fetched &&
+            now - fetched < AvpSavaStationSource.RefreshInterval &&
+            stationFile.Exists)
+        {
+            return;
+        }
+
+        try
+        {
+            var geoJson = await stationSource.FetchGeoJsonAsync(now, cancellationToken)
+                .ConfigureAwait(false);
+
+            await stationFile.WriteAsync(geoJson, cancellationToken).ConfigureAwait(false);
+            _stationsFetchedAt = now;
+        }
+        catch (Exception ex)
+        {
+            // Stari registar ostaje. Stanice se ne sele.
+            logger.LogWarning(ex, "Registar stanica nije osvježen, koristi se prethodni.");
         }
     }
 

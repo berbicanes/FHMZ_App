@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/geojson/stations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetStations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sources": {
         parameters: {
             query?: never;
@@ -157,6 +173,40 @@ export interface components {
             clockEvidence: string | null;
             readonly isHealthy?: boolean;
         };
+        StationFeature: {
+            geometry: unknown;
+            properties: components["schemas"]["StationProperties"];
+        };
+        StationFeatureCollection: {
+            meta: components["schemas"]["StationMeta"];
+            features: components["schemas"]["StationFeature"][] | null;
+        };
+        StationMeta: {
+            sourceId: string | null;
+            /** Format: date-time */
+            fetchedAt: string;
+            /** Format: int32 */
+            stationCount: number;
+            /** Format: int32 */
+            withoutGeometry: number;
+            /** Format: int32 */
+            withoutGaugeZero: number;
+            /** Format: int32 */
+            withoutName: number;
+        };
+        StationProperties: {
+            sourceId: string | null;
+            stationKey?: string | null;
+            name: string | null;
+            location?: string | null;
+            stationType?: string | null;
+            /** Format: double */
+            gaugeZero?: number | null;
+            /** Format: int32 */
+            gaugeBoardCount?: number | null;
+            agencyName: string | null;
+            agencyUrl: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -182,6 +232,26 @@ export interface operations {
                 };
                 content: {
                     "application/geo+json": components["schemas"]["ReachFeatureCollection"];
+                };
+            };
+        };
+    };
+    GetStations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/geo+json": components["schemas"]["StationFeatureCollection"];
                 };
             };
         };

@@ -47,6 +47,14 @@ internal static class ProbeTargets
     /// </summary>
     public static readonly IReadOnlyList<PageTarget> Pages =
     [
+        // Registar stanica sa geometrijom. Sonda ga inače hvata samo kao uzorak bez
+        // geometrije, a adapter se testira upravo protiv geometrije (SOURCES.md §1.2).
+        new("avp-sava", "stanice-registar-sa-geometrijom",
+            "https://isvportal.voda.ba/server/rest/services/ISV_BIH_2009_javnakarta/MapServer/1/query"
+            + "?where=1%3D1&outFields=HID_ID,NAZIV,LOKACIJA,TIP_HIDROLO%C5%A0KE_STANICE,KOTA_0,BR_V_LETVI"
+            + "&outSR=4326&returnGeometry=true&geometryPrecision=5&f=geojson", "json",
+            "SOURCES.md §1.2 — 102 stanice, geometrija umjesto x/y atributa"),
+
         new("avpjm", "vodomjerne-stanice-lista",
             "https://avpjm.jadran.ba/vodomjerne_stanice", "html",
             "SOURCES.md §2 — lista stanica"),
