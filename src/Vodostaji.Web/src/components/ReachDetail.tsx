@@ -121,11 +121,17 @@ export function ReachDetail({
         )}
 
         {/* Doslovni tekst agencije. Termin koji korisnik vidi mora biti isti kroz cijeli
-            flow (UI.md §7), pa se pokazuje i ono što je izvor stvarno rekao. */}
-        <div className="flex justify-between gap-4">
-          <dt className="text-[--color-text-muted]">Izvor kaže</dt>
-          <dd className="text-right">{reach.statusLabelOriginal}</dd>
-        </div>
+            flow (UI.md §7), pa se pokazuje i ono što je izvor stvarno rekao.
+
+            AVPJM ne šalje nikakav tekst statusa, pa prazan red ne stoji — prazno polje uz
+            natpis "Izvor kaže" izgleda kao da smo nešto izgubili, a nismo: nema šta da se
+            pokaže. Razlog je objašnjen u legendi tog izvora. */}
+        {reach.statusLabelOriginal && reach.statusLabelOriginal.trim().length > 0 && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-[--color-text-muted]">Izvor kaže</dt>
+            <dd className="text-right">{reach.statusLabelOriginal}</dd>
+          </div>
+        )}
 
         {/* Bez ovoga podatak star dva sata izgleda kao zastoj, a nije — izvor jednostavno
             objavljuje sa kašnjenjem. Prešutjeti to znači pustiti korisnika da pogrešno
@@ -171,13 +177,13 @@ export function ReachDetail({
         </p>
       )}
 
-      {reach.stationKey && (
+      {reach.sourceId && reach.stationKey && (
         <Suspense
           fallback={
             <p className="mt-4 text-sm text-[--color-text-muted]">Učitavanje historije…</p>
           }
         >
-          <HistoryChart stationKey={reach.stationKey} />
+          <HistoryChart sourceId={reach.sourceId} stationKey={reach.stationKey} />
         </Suspense>
       )}
 

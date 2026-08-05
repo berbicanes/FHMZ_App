@@ -22,13 +22,22 @@ import type { ReachHistory } from '../api/types'
  * prekid. Linija koja glatko pređe preko sata u kojem mjerenja nema tvrdi da znamo nešto
  * što ne znamo.
  */
-export function HistoryChart({ stationKey }: { stationKey: string }) {
+export function HistoryChart({
+  sourceId,
+  stationKey,
+}: {
+  sourceId: string
+  stationKey: string
+}) {
   const [days, setDays] = useState<7 | 30>(7)
 
   const history = useQuery({
-    queryKey: ['history', stationKey, days],
+    // Ključ ide **uz izvor**. Bez toga graf jedne rijeke završi pod imenom druge.
+    queryKey: ['history', sourceId, stationKey, days],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/reaches/${encodeURIComponent(stationKey)}/history?days=${days}`)
+      const response = await fetch(
+        `/api/v1/reaches/${encodeURIComponent(sourceId)}/${encodeURIComponent(stationKey)}/history?days=${days}`,
+      )
       if (!response.ok) throw new Error(`Historija nije dostupna (${response.status}).`)
       return (await response.json()) as ReachHistory
     },

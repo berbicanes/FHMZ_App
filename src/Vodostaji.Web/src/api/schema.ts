@@ -52,7 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/reaches/{stationKey}/history": {
+    "/api/v1/reaches/{sourceId}/{stationKey}/history": {
         parameters: {
             query?: never;
             header?: never;
@@ -350,6 +350,7 @@ export interface operations {
             };
             header?: never;
             path: {
+                sourceId: string;
                 stationKey: string;
             };
             cookie?: never;

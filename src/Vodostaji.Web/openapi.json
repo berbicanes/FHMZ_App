@@ -66,13 +66,21 @@
         }
       }
     },
-    "/api/v1/reaches/{stationKey}/history": {
+    "/api/v1/reaches/{sourceId}/{stationKey}/history": {
       "get": {
         "tags": [
           "Vodostaji.Api"
         ],
         "operationId": "GetReachHistory",
         "parameters": [
+          {
+            "name": "sourceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "stationKey",
             "in": "path",

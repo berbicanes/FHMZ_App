@@ -148,7 +148,14 @@ app.MapGet("/api/v1/geojson/stations", async (StationMapFile file, CancellationT
    .WithName("GetStations");
 
 // Historija jedne dionice, za graf 7/30 dana (UI.md §3).
-app.MapGet("/api/v1/reaches/{stationKey}/history", async (
+// Izvor je **dio putanje**, ne pretpostavka.
+//
+// Ranije je ovdje stajalo `AvpSavaArcGisSource.Id` zakucano. Ključ `28` postoji i kod AVP
+// Save i kod AVPJM-a, pa je otvaranje stanice Malo Polje 2 povlačilo historiju dionice AVP
+// Save — graf jedne rijeke pod imenom druge. Domenski model cijelo vrijeme kaže da ključ
+// vrijedi samo unutar izvora; ovaj endpoint ga nije slušao.
+app.MapGet("/api/v1/reaches/{sourceId}/{stationKey}/history", async (
+    string sourceId,
     string stationKey,
     int? days,
     EfHistoryReader reader,
@@ -158,11 +165,13 @@ app.MapGet("/api/v1/reaches/{stationKey}/history", async (
     // Samo 7 i 30 dana. Proizvoljan broj bi bio API koji obećava rezolucije koje nemamo.
     var window = days == 30 ? 30 : 7;
 
-    var history = await reader.ReadAsync(
-        AvpSavaArcGisSource.Id, stationKey, window, time.GetUtcNow(), ct);
+    var history = await reader.ReadAsync(sourceId, stationKey, window, time.GetUtcNow(), ct);
 
     return history is null
-        ? Results.NotFound(new { message = $"Dionica `{stationKey}` ne postoji." })
+        ? Results.NotFound(new
+            {
+                message = $"Dionica `{stationKey}` ne postoji kod izvora `{sourceId}`.",
+            })
         : Results.Ok(history);
 })
    .Produces<ReachHistory>()
