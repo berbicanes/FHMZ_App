@@ -10,6 +10,27 @@ Slojevi različitih agencija su **zasebni layeri sa zasebnom legendom**, nikad s
 
 MapLibre GL JS. Ne ArcGIS JS API.
 
+## 1a. Dionica nije poplavljeno područje
+
+Poligoni AVP Save su **dionice**, u prosjeku **339 km²**, najveća 1041 km², ukupno trećina
+teritorije BiH. Jedno očitanje na jednoj vodomjernoj letvi opisuje cijelu tu površinu.
+
+Puna ispuna u crvenom preko 769 km² čita se kao *"sve ovo je pod vodom"*, a znači *"rijeka je
+na jednom mjerilu prešla prag"*. Ta razlika je nečija odluka o evakuaciji.
+
+**Zato:** ispuna je slaba (0.18 i niže), a **granica nosi boju punom jačinom**. Ispuna kaže
+"ovdje je voda"; obris kaže "na ovo područje se ocjena odnosi". Boja i natpis agencije se ne
+mijenjaju — mijenja se samo koliko glasno ispuna govori.
+
+Uz to, i legenda i detalj **izričito pišu** da boja pokazuje stanje rijeke, ne poplavljeno
+područje.
+
+**Tačka na mjestu mjerila nije opcija.** `HYDRO_ID` ne povezuje dionice sa registrom stanica
+(SOURCES.md §1.7), pa koordinatu mjerila za dionicu nemamo. Tačka u centru poligona bila bi
+izmišljena lokacija mjerenja — gore od poligona.
+
+---
+
 ## 2. Prikaz starosti podatka — obavezno
 
 Starost se računa iz `MeasuredAt`, relativno prema `Station.ExpectedInterval`.

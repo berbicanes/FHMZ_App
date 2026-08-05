@@ -218,7 +218,15 @@ function buildLayers(instance: MapLibreMap) {
     data: { type: 'FeatureCollection', features: [] },
   })
 
-  // Ispuna po boji iz renderera agencije. Boja stiže u podatku; ovdje se ne bira.
+  // Ispuna je namjerno **slaba**, a granica jaka.
+  //
+  // Ovi poligoni nisu poplavljeno područje nego dionice — u prosjeku 339 km², najveća 1041
+  // km², ukupno trećina BiH. Jedno očitanje na jednoj letvi opisuje cijelu tu površinu.
+  // Puna ispuna u crvenom preko 769 km² čita se kao "sve ovo je pod vodom", a znači "rijeka
+  // je na jednom mjerilu prešla prag". Razlika je nečija odluka o evakuaciji.
+  //
+  // Ispuna kaže "ovdje je voda". Obris kaže "na ovo područje se ocjena odnosi". Zadržavamo
+  // boju agencije i njen doslovni natpis; mijenja se samo koliko glasno ispuna govori.
   instance.addLayer({
     id: 'reaches-fill',
     type: 'fill',
@@ -229,9 +237,27 @@ function buildLayers(instance: MapLibreMap) {
       // Stariji podatak je vidljivo bljeđi (UI.md §2).
       'fill-opacity': [
         'case',
-        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,
-        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
-        0.85,
+        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.08,
+        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.13,
+        0.18,
+      ],
+    },
+  })
+
+  // Granica dionice — nosi boju punom jačinom. Ovo je element koji oko treba da uhvati.
+  instance.addLayer({
+    id: 'reaches-edge',
+    type: 'line',
+    source: 'reaches',
+    filter: ['!=', ['get', 'level'], 'Unknown'],
+    paint: {
+      'line-color': ['get', 'color'],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 6, 1.6, 10, 3],
+      'line-opacity': [
+        'case',
+        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.5,
+        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.75,
+        0.95,
       ],
     },
   })
@@ -244,8 +270,8 @@ function buildLayers(instance: MapLibreMap) {
     source: 'reaches',
     filter: ['==', ['get', 'level'], 'Unknown'],
     paint: hatch
-      ? { 'fill-pattern': HATCH, 'fill-opacity': 0.75 }
-      : { 'fill-color': '#cccccc', 'fill-opacity': 0.75 },
+      ? { 'fill-pattern': HATCH, 'fill-opacity': 0.35 }
+      : { 'fill-color': '#cccccc', 'fill-opacity': 0.25 },
   })
 
   if (!hatch) {
@@ -258,14 +284,6 @@ function buildLayers(instance: MapLibreMap) {
       paint: { 'line-color': '#5c6470', 'line-width': 1.2, 'line-dasharray': [3, 2] },
     })
   }
-
-  instance.addLayer({
-    id: 'reaches-outline',
-    type: 'line',
-    source: 'reaches',
-    filter: ['<=', ['coalesce', ['get', 'ageRatio'], 0], 3],
-    paint: { 'line-color': '#0d1117', 'line-width': 0.6, 'line-opacity': 0.8 },
-  })
 
   // Isprekidana ivica za zastario podatak (UI.md §2). `line-dasharray` ne prima izraze po
   // podatku, pa zastarjele dionice dobijaju vlastiti sloj.

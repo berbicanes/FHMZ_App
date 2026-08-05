@@ -105,6 +105,15 @@ export function ReachDetail({
         <span>{reach.levelLabel}</span>
       </p>
 
+      {/* Bez ovoga korisnik može pročitati obojenu dionicu kao poplavljeno područje.
+          Stoji uz vodostaj, ne u dnu, jer se čita u istom pogledu. */}
+      {reach.sourceId === 'avp-sava' && (
+        <p className="mb-3 text-xs leading-relaxed text-[--color-text-muted]">
+          Ocjena se odnosi na dionicu rijeke, mjerenu na hidrološkim stanicama na njoj — nije
+          prikaz poplavljenog područja.
+        </p>
+      )}
+
       <dl className="space-y-1.5 text-sm">
         {measured ? (
           <div className="flex justify-between gap-4">

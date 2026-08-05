@@ -92,8 +92,15 @@ export function Legend({ agencyName }: { agencyName: string }) {
         </li>
       </ul>
 
-      <p className="mt-3 text-xs leading-relaxed text-[--color-text-muted]">
-        Bljeđa ispuna znači da je jedno ili više mjerenja izostalo; isprekidana ivica da su
+      <p className="mt-3 rounded border border-[--color-border] bg-[--color-surface] p-2.5 text-xs leading-relaxed">
+        <strong className="font-semibold">Boja pokazuje stanje rijeke na toj dionici, ne
+        poplavljeno područje.</strong>{' '}
+        Obris omeđuje dionicu na koju se ocjena odnosi — u prosjeku oko 340 km². Ocjena dolazi
+        sa mjerila na toj rijeci, a ne znači da je cijelo područje pod vodom.
+      </p>
+
+      <p className="mt-2 text-xs leading-relaxed text-[--color-text-muted]">
+        Bljeđa boja znači da je jedno ili više mjerenja izostalo; isprekidana ivica da su
         izostala više od tri. Starost se računa od trenutka kad podatak realno može stići,
         jer izvor objavljuje sa zastojem — svjež podatak zato ne znači i podatak od maloprije.
       </p>
