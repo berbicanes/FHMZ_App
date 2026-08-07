@@ -72,12 +72,25 @@ Starost se računa iz `MeasuredAt`, relativno prema `Station.ExpectedInterval`.
 
 ## 6. Dizajn
 
-Ovo je alat koji neko otvara u 3 ujutro kad mu je voda blizu kuće. Ozbiljan, čitljiv, bez marketinškog tona.
+Ovo je alat koji neko otvara u 3 ujutro kad mu je voda blizu kuće. Ozbiljan i čitljiv prije
+svega ostalog.
 
-- **Podloga:** tamna mapa sa prigušenim terenom — status boje moraju biti najsvjetlija stvar na ekranu. Ništa drugo ne smije se takmičiti s njima.
-- **Tipografija:** jedan karakterističan display face za brojeve — vodostaj je heroj ekrana — i neutralan, vrlo čitljiv body face. **Brojevi tabularni**, da ne poskakuju pri osvježavanju.
-- **Motion:** jedna jedina animacija — prelaz boje kad se status promijeni. To je jedina promjena koja zaslužuje pažnju. Sve ostalo je šum.
-- **Bez** gradijenata, glassmorphisma, i bilo kakvog dekora koji nije podatak.
+**Izmjena 2026-08-07, odluka vlasnika projekta.** Raniji tekst je glasio: *„Bez gradijenata,
+glassmorphisma, i bilo kakvog dekora koji nije podatak."* Ta zabrana je **ukinuta** — moderan
+vizuelni jezik je dozvoljen.
+
+Ukinuta je zabrana, **ne razlog zbog kojeg je postojala.** Zato ostaje kao tvrdo pravilo:
+
+> **Ništa se ne smije takmičiti sa bojama statusa.** One su najsvjetlija i najzasićenija stvar
+> na ekranu. Svaki gradijent, sjena, staklo ili akcenat mora biti tiši od njih — ako se pri
+> pogledu na ekran oko prvo zaustavi na dekoru, dekor je pogrešan bez obzira koliko je lijep.
+
+- **Podloga:** tamna mapa sa prigušenim terenom.
+- **Tipografija:** jedan karakterističan display face za brojeve — vodostaj je heroj ekrana —
+  i neutralan, vrlo čitljiv body face. **Brojevi tabularni**, da ne poskakuju pri osvježavanju.
+- **Motion:** promjena statusa je jedina promjena koja zaslužuje punu pažnju. Ostale animacije
+  su dozvoljene, ali kratke i tihe, i sve poštuju `prefers-reduced-motion`.
+- **Dekor ne smije nositi značenje.** Boja, oblik i tekst nose podatak; sve ostalo je površina.
 
 ## 7. Copy
 

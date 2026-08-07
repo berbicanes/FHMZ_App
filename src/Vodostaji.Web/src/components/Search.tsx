@@ -6,7 +6,7 @@ import { searchReaches, searchStations, type SearchHit } from '../lib/search'
  * Pretraga po rijeci i po mjestu (UI.md §4).
  *
  * Rezultati su razdvojeni po tome šta jesu: dionica nosi stanje, mjerno mjesto ne nosi ništa
- * osim lokacije. Miješanje u jednu listu bi korisniku sugerisalo da su iste vrste stvari.
+ * osim lokacije. Miješanje u jednu listu sugerisalo bi da su iste vrste stvari.
  */
 export function Search({
   reaches,
@@ -25,31 +25,46 @@ export function Search({
   const reachHits = useMemo(() => searchReaches(reaches, query), [reaches, query])
   const stationHits = useMemo(() => searchStations(stations, query), [stations, query])
 
-  const open = (hit: SearchHit) =>
-    hit.kind === 'reach'
-      ? onOpenReach(hit.sourceId, hit.key)
-      : onOpenStation(hit.sourceId, hit.key)
+  const open = (hit: SearchHit) => {
+    setQuery('')
+    if (hit.kind === 'reach') onOpenReach(hit.sourceId, hit.key)
+    else onOpenStation(hit.sourceId, hit.key)
+  }
 
   return (
-    <section aria-label="Pretraga">
+    <div>
       <label htmlFor={inputId} className="sr-only">
         Traži po imenu rijeke ili mjesta
       </label>
-      <input
-        id={inputId}
-        type="search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Rijeka ili mjesto — npr. Maglaj"
-        autoComplete="off"
-        className="w-full rounded border border-[--color-border-strong] bg-[--color-surface] px-3 py-2 text-sm placeholder:text-[--color-text-muted]"
-      />
+
+      <div className="relative">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 15 15"
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[--color-text-muted]"
+        >
+          <circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+
+        <input
+          id={inputId}
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Rijeka ili mjesto — npr. Maglaj"
+          autoComplete="off"
+          className="w-full rounded-[--radius-card] border border-[--color-line-strong] bg-[--color-ink-850] py-2.5 pr-3 pl-9 text-sm placeholder:text-[--color-text-muted] focus:border-[--color-text-soft]"
+        />
+      </div>
 
       {query.trim().length > 0 && (
         <div className="mt-2" role="status" aria-live="polite">
           {reachHits.length === 0 && stationHits.length === 0 ? (
             /* Prazno stanje kaže šta je traženo i gdje je traženo (UI.md §7). */
-            <p className="text-sm text-[--color-text-muted]">
+            <p className="px-1 text-sm leading-relaxed text-[--color-text-muted]">
               Ništa se ne poklapa sa „{query}”. Traži se po imenu dionice, rijeke, mjernog
               mjesta i opisu lokacije.
             </p>
@@ -63,7 +78,7 @@ export function Search({
           )}
         </div>
       )}
-    </section>
+    </div>
   )
 }
 
@@ -77,21 +92,23 @@ function Group({
   onOpen: (hit: SearchHit) => void
 }) {
   return (
-    <div className="mb-3">
-      <h3 className="mb-1 text-xs font-semibold tracking-wide text-[--color-text-muted] uppercase">
-        {title} ({hits.length})
-      </h3>
+    <div className="mb-3 last:mb-0">
+      <p className="eyebrow mb-1 px-1">
+        {title} · {hits.length}
+      </p>
       <ul>
         {hits.slice(0, 8).map((hit) => (
-          <li key={`${hit.kind}-${hit.key}-${hit.title}`}>
+          <li key={`${hit.kind}-${hit.sourceId}-${hit.key}`}>
             <button
               type="button"
               onClick={() => onOpen(hit)}
-              className="w-full rounded px-2 py-1.5 text-left text-sm hover:bg-[--color-surface-raised]"
+              className="w-full rounded-[--radius-card] px-2 py-1.5 text-left text-sm hover:bg-[--color-ink-800]"
             >
               <span className="block">{hit.title}</span>
               {hit.subtitle && (
-                <span className="block text-xs text-[--color-text-muted]">{hit.subtitle}</span>
+                <span className="block truncate text-xs text-[--color-text-muted]">
+                  {hit.subtitle}
+                </span>
               )}
             </button>
           </li>

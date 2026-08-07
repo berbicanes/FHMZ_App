@@ -1,23 +1,79 @@
 /**
- * Legenda jedne agencije. Boje i natpisi su iz njihovog renderera (SOURCES.md §1.1).
+ * Legende. **Jedna po agenciji**, nikad zajednička.
  *
- * Sljedeći izvor donosi **svoju** legendu — stapanje agencija u jedan sloj sa jednom
- * legendom je zabranjeno (UI.md §1).
+ * AVP Sava ima skalu od pet stupnjeva sa zvaničnim bojama; AVPJM i FHMZBIH nemaju nijedan,
+ * jer stupanj opasnosti ne objavljuju. Zajednička legenda bi morala izmisliti nešto za jednu
+ * od njih (CLAUDE.md → Šta NE raditi).
  */
-const ENTRIES = [
+const SAVA_ENTRIES = [
   { color: '#38a800', label: 'Normalno' },
   { color: '#ffff00', label: 'Izljevanje iz korita' },
   { color: '#ffaa00', label: 'Poplave' },
   { color: '#e60000', label: 'Značajne poplave' },
 ] as const
 
-/**
- * Legenda Jadranskog sliva. **Zasebna**, jer je i sloj zaseban.
- *
- * AVPJM ne objavljuje stupanj opasnosti javnosti, pa ovdje nema skale od zelene do crvene —
- * ima samo razlika između "izmjereno" i "nema podatka". Plava je birana tako da se ne
- * pomiješa sa skalom AVP Save; ista nijansa bi tvrdila nešto što agencija nije rekla.
- */
+const HATCH =
+  'repeating-linear-gradient(45deg, #5c6470 0 2px, transparent 2px 5px)'
+
+function Swatch({
+  color,
+  hatched = false,
+  ring = false,
+  round = false,
+}: {
+  color: string
+  hatched?: boolean
+  ring?: boolean
+  round?: boolean
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`h-3.5 w-3.5 shrink-0 ${round ? 'rounded-full' : 'rounded-[3px]'}`}
+      style={{
+        backgroundColor: color,
+        backgroundImage: hatched ? HATCH : undefined,
+        border: ring ? '2px solid #e9eef5' : '1px solid rgb(0 0 0 / 0.45)',
+      }}
+    />
+  )
+}
+
+export function SavaLegend({ agencyName }: { agencyName: string }) {
+  return (
+    <div>
+      <p className="mb-2 text-xs text-[--color-text-muted]">{agencyName}</p>
+
+      <ul className="space-y-1.5">
+        {SAVA_ENTRIES.map((entry) => (
+          <li key={entry.label} className="flex items-center gap-2.5 text-sm">
+            <Swatch color={entry.color} />
+            <span>{entry.label}</span>
+          </li>
+        ))}
+        <li className="flex items-center gap-2.5 text-sm">
+          <Swatch color="#cccccc" hatched />
+          <span>Nema podatka</span>
+        </li>
+      </ul>
+
+      <p className="mt-3 rounded-[--radius-card] border border-[--color-line] bg-[--color-ink-850] px-3 py-2.5 text-xs leading-relaxed">
+        <strong className="font-semibold">
+          Boja pokazuje stanje rijeke na toj dionici, ne poplavljeno područje.
+        </strong>{' '}
+        Obris omeđuje dionicu na koju se ocjena odnosi — u prosjeku oko 340 km². Ocjena dolazi
+        sa mjerila na toj rijeci.
+      </p>
+
+      <p className="mt-2 text-xs leading-relaxed text-[--color-text-muted]">
+        Bljeđa boja znači da je jedno ili više mjerenja izostalo; isprekidana ivica da su
+        izostala više od tri. Starost se računa od trenutka kad podatak realno može stići, jer
+        izvor objavljuje sa zastojem.
+      </p>
+    </div>
+  )
+}
+
 export function PointSourceLegend({
   agencyName,
   color,
@@ -31,90 +87,22 @@ export function PointSourceLegend({
   note: string
 }) {
   return (
-    <section aria-label={`Legenda — ${agencyName}`}>
-      <h2 className="mb-2 text-xs font-semibold tracking-wide text-[--color-text-muted] uppercase">
-        Legenda — {agencyName}
-      </h2>
+    <div>
+      <p className="mb-2 text-xs text-[--color-text-muted]">{agencyName}</p>
 
       <ul className="space-y-1.5">
         <li className="flex items-center gap-2.5 text-sm">
           {/* Oblik, ne samo boja (UI.md §5) — legenda mora izgledati kao mapa. */}
-          <span
-            aria-hidden="true"
-            className="h-3.5 w-3.5 shrink-0 rounded-full"
-            style={{
-              backgroundColor: color,
-              border: ring ? '2px solid #e6edf3' : '1px solid rgb(0 0 0 / 0.4)',
-            }}
-          />
+          <Swatch color={color} ring={ring} round />
           <span>Izmjereno, bez ocjene opasnosti</span>
         </li>
         <li className="flex items-center gap-2.5 text-sm">
-          <span
-            aria-hidden="true"
-            className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/40"
-            style={{
-              backgroundColor: '#cccccc',
-              backgroundImage:
-                'repeating-linear-gradient(45deg, #5c6470 0 2px, transparent 2px 5px)',
-            }}
-          />
+          <Swatch color="#cccccc" hatched round />
           <span>Nema podatka</span>
         </li>
       </ul>
 
       <p className="mt-3 text-xs leading-relaxed text-[--color-text-muted]">{note}</p>
-    </section>
-  )
-}
-
-export function Legend({ agencyName }: { agencyName: string }) {
-  return (
-    <section aria-label="Legenda">
-      <h2 className="mb-2 text-xs font-semibold tracking-wide text-[--color-text-muted] uppercase">
-        Legenda — {agencyName}
-      </h2>
-
-      <ul className="space-y-1.5">
-        {ENTRIES.map((entry) => (
-          <li key={entry.label} className="flex items-center gap-2.5 text-sm">
-            <span
-              aria-hidden="true"
-              className="status-swatch h-3.5 w-3.5 shrink-0 rounded-sm border border-black/40"
-              style={{ backgroundColor: entry.color }}
-            />
-            <span>{entry.label}</span>
-          </li>
-        ))}
-
-        {/* Nema podatka nosi šrafuru i ovdje, ne samo na mapi. Ista stvar mora izgledati
-            isto na oba mjesta, inače legenda ne objašnjava mapu. */}
-        <li className="flex items-center gap-2.5 text-sm">
-          <span
-            aria-hidden="true"
-            className="h-3.5 w-3.5 shrink-0 rounded-sm border border-black/40"
-            style={{
-              backgroundColor: '#cccccc',
-              backgroundImage:
-                'repeating-linear-gradient(45deg, #5c6470 0 2px, transparent 2px 5px)',
-            }}
-          />
-          <span>Nema podatka</span>
-        </li>
-      </ul>
-
-      <p className="mt-3 rounded border border-[--color-border] bg-[--color-surface] p-2.5 text-xs leading-relaxed">
-        <strong className="font-semibold">Boja pokazuje stanje rijeke na toj dionici, ne
-        poplavljeno područje.</strong>{' '}
-        Obris omeđuje dionicu na koju se ocjena odnosi — u prosjeku oko 340 km². Ocjena dolazi
-        sa mjerila na toj rijeci, a ne znači da je cijelo područje pod vodom.
-      </p>
-
-      <p className="mt-2 text-xs leading-relaxed text-[--color-text-muted]">
-        Bljeđa boja znači da je jedno ili više mjerenja izostalo; isprekidana ivica da su
-        izostala više od tri. Starost se računa od trenutka kad podatak realno može stići,
-        jer izvor objavljuje sa zastojem — svjež podatak zato ne znači i podatak od maloprije.
-      </p>
-    </section>
+    </div>
   )
 }

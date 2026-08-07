@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  LngLatBounds,
   Map as MapLibreMap,
   NavigationControl,
   type GeoJSONSource,
   type MapGeoJSONFeature,
+  type FilterSpecification,
   type StyleSpecification,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 // Mora prije prve instance mape.
 import '../lib/maplibre-worker'
+import type { Geometry } from 'geojson'
 import type {
   ReachCollection,
   ReachProperties,
@@ -51,6 +54,8 @@ interface Props {
   points: Partial<Record<PointSourceId, ReachCollection>>
   stations: StationCollection | undefined
   showStations: boolean
+  /** Šta je trenutno otvoreno — mapa to ističe i doleti do toga. */
+  selected: { sourceId: string; key: string } | null
   onSelect: (properties: ReachProperties) => void
   onSelectStation: (properties: StationProperties) => void
   /** Mapa koja ne uspije mora to **reći**. Tiha prazna mapa izgleda kao mapa bez opasnosti. */
@@ -62,6 +67,7 @@ export function ReachMap({
   points,
   stations,
   showStations,
+  selected,
   onSelect,
   onSelectStation,
   onError,
@@ -183,6 +189,53 @@ export function ReachMap({
     ;(map.current?.getSource('stations') as GeoJSONSource | undefined)?.setData(stations)
   }, [layersReady, stations])
 
+  // Isticanje odabranog i let do njega.
+  //
+  // Bez ovoga korisnik koji klikne red u tabeli ne vidi gdje je to na mapi, a onaj ko
+  // otvori podijeljen link gleda cijelu državu umjesto svoje rijeke.
+  useEffect(() => {
+    const instance = map.current
+    if (!layersReady || !instance) return
+
+    const match: FilterSpecification = selected
+      ? [
+          'all',
+          ['==', ['get', 'sourceId'], selected.sourceId],
+          ['==', ['get', 'stationKey'], selected.key],
+        ]
+      : ['==', ['get', 'stationKey'], '\u0000nema']
+
+    for (const id of ['reaches-selected', ...POINT_SOURCES.map(selectedPointLayerId)]) {
+      if (instance.getLayer(id)) instance.setFilter(id, match)
+    }
+
+    if (!selected) return
+
+    const collection =
+      selected.sourceId === 'avp-sava'
+        ? data
+        : points[selected.sourceId as PointSourceId]
+
+    const feature = collection?.features.find(
+      (f) => f.properties.stationKey === selected.key,
+    )
+    if (!feature?.geometry) return
+
+    const bounds = new LngLatBounds()
+    let count = 0
+    walk(feature.geometry, (lon, lat) => {
+      bounds.extend([lon, lat])
+      count++
+    })
+    if (count === 0) return
+
+    instance.fitBounds(bounds, {
+      padding: { top: 90, right: 60, bottom: 90, left: 60 },
+      maxZoom: 11,
+      duration: prefersReducedMotion() ? 0 : 700,
+    })
+  }, [layersReady, selected, data, points])
+
   useEffect(() => {
     const instance = map.current
     // `setLayoutProperty` baca ako sloja nema, a pad ovdje bi obrisao cijeli ekran.
@@ -213,6 +266,35 @@ export function ReachMap({
  */
 const pointSourceId = (id: PointSourceId) => `points-${id}`
 const pointLayerId = (id: PointSourceId) => `points-${id}-circles`
+const selectedPointLayerId = (id: PointSourceId) => `points-${id}-selected`
+
+const NOTHING: FilterSpecification = ['==', ['get', 'stationKey'], '\u0000nema']
+
+/** Poštuje `prefers-reduced-motion` (UI.md §5) — let je udobnost, ne informacija. */
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
+/** Prolazi kroz bilo koju GeoJSON geometriju i daje svaku tačku. */
+function walk(geometry: Geometry, visit: (lon: number, lat: number) => void) {
+  const coords = (value: unknown): void => {
+    if (Array.isArray(value) && typeof value[0] === 'number' && typeof value[1] === 'number') {
+      visit(value[0], value[1])
+      return
+    }
+    if (Array.isArray(value)) value.forEach(coords)
+  }
+
+  if (geometry.type === 'GeometryCollection') {
+    geometry.geometries.forEach((g) => walk(g, visit))
+    return
+  }
+
+  coords((geometry as { coordinates?: unknown }).coordinates)
+}
 
 function buildLayers(instance: MapLibreMap) {
   // Šrafura je obavezna (UI.md §2), ali ako platno zakaže, mapa se ne smije izgubiti.
@@ -299,6 +381,19 @@ function buildLayers(instance: MapLibreMap) {
 
   // Isprekidana ivica za zastario podatak (UI.md §2). `line-dasharray` ne prima izraze po
   // podatku, pa zastarjele dionice dobijaju vlastiti sloj.
+  // Odabrana dionica — svijetla, deblja kontura iznad svega ostalog.
+  instance.addLayer({
+    id: 'reaches-selected',
+    type: 'line',
+    source: 'reaches',
+    filter: NOTHING,
+    paint: {
+      'line-color': '#ffffff',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 6, 2.4, 10, 4],
+      'line-opacity': 0.95,
+    },
+  })
+
   instance.addLayer({
     id: 'reaches-outline-stale',
     type: 'line',
@@ -350,6 +445,21 @@ function buildLayers(instance: MapLibreMap) {
           ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.6,
           0.9,
         ],
+      },
+    })
+  }
+
+  for (const id of POINT_SOURCES) {
+    instance.addLayer({
+      id: selectedPointLayerId(id),
+      type: 'circle',
+      source: pointSourceId(id),
+      filter: NOTHING,
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 9, 10, 14],
+        'circle-color': 'rgba(0,0,0,0)',
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 2,
       },
     })
   }

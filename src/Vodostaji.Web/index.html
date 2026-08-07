@@ -2,9 +2,22 @@
 <html lang="bs">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="Stanje rijeka u Bosni i Hercegovini, objedinjeno iz javnih izvora nadležnih agencija. Podaci nisu zvanični." />
+    <meta name="theme-color" content="#07090d" />
+    <meta
+      name="description"
+      content="Stanje rijeka u Bosni i Hercegovini, objedinjeno iz javnih izvora nadležnih agencija. Podaci nisu zvanični."
+    />
+
+    <!-- Fontovi se učitavaju rano jer nose brojeve koji su heroj ekrana. Oba su izrezana
+         na 117 glifova koje aplikacija stvarno ispisuje — 48 kB ukupno. -->
+    <link rel="preload" href="/fonts/Inter.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/SpaceGrotesk.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Podloga mape je vanjski host; rano povezivanje skida jedan round-trip na 3G. -->
+    <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin />
+
     <title>Vodostaji BiH</title>
   </head>
   <body>

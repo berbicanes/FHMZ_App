@@ -1,27 +1,57 @@
 @import "tailwindcss";
 
+/* Fontovi su self-hostani i **izrezani na 117 glifova** koje aplikacija stvarno ispisuje —
+   ASCII, bosanski dijakritički znaci i nekoliko tipografskih. Oba su varijabilna, pa jedan
+   fajl nosi sve težine: 48 kB ukupno umjesto 416 kB koliko bi bili puni subsetovi.
+   `swap` zato što tekst mora biti čitljiv i prije nego font stigne (UI.md §4, 3G). */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/SpaceGrotesk.woff2") format("woff2-variations");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
 @theme {
   /* Boje statusa dolaze iz renderera agencije (SOURCES.md §1.1) i ne biraju se ovdje.
-     Stoje kao varijable samo da legenda i mapa koriste isti izvor. */
+     Ovo je jedina zasićena boja u cijeloj paleti — sve ostalo je namjerno prigušeno da se
+     ne takmiči s njima (UI.md §6). */
   --color-status-normal: #38a800;
   --color-status-elevated: #ffff00;
   --color-status-flood: #ffaa00;
   --color-status-emergency: #e60000;
   --color-status-unknown: #cccccc;
+  --color-source-avpjm: #4a8fd4;
+  --color-source-fhmzbih: #3aa8a0;
 
-  /* Podloga je tamna da bi boje statusa bile najsvjetlija stvar na ekranu (UI.md §6).
-     Ništa drugo se s njima ne takmiči. */
-  --color-surface: #0d1117;
-  --color-surface-raised: #161b22;
-  /* Razdvajači. Dekorativni, pa ne padaju pod WCAG 1.4.11. */
-  --color-border: #4a5563;
+  /* Površine. Tri nivoa dubine, sve blizu crne da mapa i status boje ostanu najsvjetlije. */
+  --color-ink-950: #07090d;
+  --color-ink-900: #0d1117;
+  --color-ink-850: #12161d;
+  --color-ink-800: #171c25;
+  --color-ink-700: #232936;
+  --color-ink-600: #333b4a;
+  --color-ink-500: #4a5462;
 
-  /* Ivice elemenata koji se mogu fokusirati ili koristiti — polja, dugmad. Izmjereno
-     3.50:1 prema podlozi; WCAG 1.4.11 traži 3:1 za takve elemente. Prethodnih #30363d
-     je davalo 1.55:1 i padalo. */
-  --color-border-strong: #616b78;
-  --color-text: #e6edf3;
-  --color-text-muted: #9198a1;
+  --color-line: #2a313d;
+  --color-line-strong: #616b78;
+
+  --color-text: #e9eef5;
+  --color-text-soft: #aeb7c4;
+  --color-text-muted: #7c8798;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-panel: 14px;
+  --radius-card: 10px;
+  --radius-chip: 999px;
 }
 
 html,
@@ -32,26 +62,64 @@ body,
 }
 
 body {
-  background: var(--color-surface);
+  background: var(--color-ink-950);
   color: var(--color-text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "cv05", "ss03";
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Vodostaj je heroj ekrana, a brojevi ne smiju poskakivati pri osvježavanju (UI.md §6). */
+/* Vodostaj je heroj ekrana (UI.md §6). Tabularne cifre da broj ne poskakuje pri
+   osvježavanju — mjerenje koje se pomjera na ekranu izgleda nemirnije nego što jeste. */
+.numeric {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Vidljivo focus stanje na svemu fokusabilnom (UI.md §5). */
-:where(a, button, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-text);
-  outline-offset: 2px;
+/* Plutajuće ploče nad mapom. Staklo i sjena su dozvoljeni od izmjene UI.md §6, ali su
+   namjerno tihi: ako oko pri pogledu na ekran prvo padne na panel a ne na boju statusa,
+   panel je pogrešan. */
+.panel {
+  background: color-mix(in oklab, var(--color-ink-900) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.04) inset,
+    0 12px 32px -12px rgb(0 0 0 / 0.7);
 }
 
-/* Jedina animacija u aplikaciji je prelaz boje kad se status promijeni (UI.md §6).
-   Sve ostalo je šum. */
+.panel-flat {
+  background: var(--color-ink-850);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+}
+
+/* Sitni natpis iznad grupe. Nosi hijerarhiju bez dodatne linije ili okvira. */
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Vidljivo focus stanje na svemu fokusabilnom (UI.md §5). */
+:where(a, button, input, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Promjena statusa je jedina promjena koja zaslužuje punu pažnju (UI.md §6). */
 .status-swatch {
   transition: background-color 400ms ease;
 }
@@ -62,17 +130,39 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* MapLibre podrazumijevano nosi svijetle kontrole; usklađujemo ih sa tamnom podlogom. */
+/* Tanke trake za skrol — panel je gust, a debela traka mu jede širinu. */
+.scroll-soft {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-600) transparent;
+}
+
+.scroll-soft::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scroll-soft::-webkit-scrollbar-thumb {
+  background: var(--color-ink-700);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+/* MapLibre podrazumijevano nosi svijetle kontrole; usklađujemo ih sa pločama iznad. */
 .maplibregl-ctrl-group {
-  background: var(--color-surface-raised) !important;
-  border: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-ink-900) 88%, transparent) !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--color-line) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.7) !important;
+  overflow: hidden;
 }
 
 .maplibregl-ctrl-group button + button {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-line) !important;
 }
 
 .maplibregl-ctrl-group button span {
@@ -80,10 +170,22 @@ body {
 }
 
 .maplibregl-ctrl-attrib {
-  background: rgb(13 17 23 / 0.85) !important;
-  color: var(--color-text-muted);
+  background: color-mix(in oklab, var(--color-ink-950) 82%, transparent) !important;
+  color: var(--color-text-muted) !important;
+  border-radius: 8px 0 0 0 !important;
+  font-size: 11px !important;
 }
 
 .maplibregl-ctrl-attrib a {
-  color: var(--color-text-muted);
+  color: var(--color-text-muted) !important;
+}
+
+.maplibregl-popup-content {
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.maplibregl-popup-tip {
+  display: none !important;
 }

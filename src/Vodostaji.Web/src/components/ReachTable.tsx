@@ -1,90 +1,91 @@
 import type { ReachProperties } from '../api/types'
-import { formatMeasuredAt, freshnessLabel, freshnessOf } from '../lib/freshness'
+import { formatMeasuredAt, freshnessLabel } from '../lib/freshness'
+import { StatusDot } from './StatusMark'
 
 /**
  * Tabelarna alternativa mapi (UI.md §5).
  *
  * Nije rezervna varijanta nego ravnopravan prikaz: čitač ekrana i tastatura ovdje dobijaju
- * isto što i miš na mapi. Zato ide u DOM uvijek, ne iza toggle-a.
+ * isto što i miš na mapi. Zato je uvijek u DOM-u, i kad je sekcija sklopljena.
  */
 export function ReachTable({
   reaches,
+  selectedKey,
   onSelect,
 }: {
   reaches: ReachProperties[]
-  onSelect: (properties: ReachProperties) => void
+  selectedKey: string | null
+  onSelect: (reach: ReachProperties) => void
 }) {
   const sorted = [...reaches].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'bs'))
 
   return (
     <table className="w-full border-collapse text-sm">
       <caption className="sr-only">
-        Stanje dionica rijeka, sa vremenom mjerenja i izvorom podatka.
+        Stanje dionica i mjernih mjesta, sa vremenom mjerenja i izvorom podatka.
       </caption>
       <thead>
-        <tr className="border-b border-[--color-border] text-left text-xs text-[--color-text-muted] uppercase">
-          <th scope="col" className="py-2 pr-3 font-semibold">Dionica</th>
-          <th scope="col" className="py-2 pr-3 font-semibold">Stanje</th>
-          <th scope="col" className="py-2 pr-3 text-right font-semibold">Vodostaj</th>
-          <th scope="col" className="py-2 font-semibold">Mjereno</th>
+        <tr className="border-b border-[--color-line] text-left">
+          <th scope="col" className="eyebrow py-2 pr-3 font-semibold">
+            Dionica
+          </th>
+          <th scope="col" className="eyebrow py-2 pr-3 text-right font-semibold">
+            Vodostaj
+          </th>
+          <th scope="col" className="eyebrow py-2 font-semibold">
+            Mjereno
+          </th>
         </tr>
       </thead>
       <tbody>
         {sorted.map((reach) => {
-          const freshness = freshnessOf(reach)
+          const key = `${reach.sourceId}-${reach.stationKey}`
           const measured = formatMeasuredAt(reach.measuredAt)
+          const selected = key === selectedKey
 
           return (
             <tr
-              key={`${reach.sourceId}-${reach.stationKey}`}
-              className="border-b border-[--color-border]/50 hover:bg-[--color-surface-raised]"
+              key={key}
+              className={`border-b border-[--color-line]/60 last:border-b-0 ${
+                selected ? 'bg-[--color-ink-800]' : 'hover:bg-[--color-ink-850]'
+              }`}
             >
               <th scope="row" className="py-2 pr-3 text-left font-normal">
                 <button
                   type="button"
                   onClick={() => onSelect(reach)}
-                  className="text-left hover:underline"
+                  className="flex items-center gap-2 text-left"
                 >
-                  {reach.name}
+                  <StatusDot reach={reach} size={9} />
+                  <span className="min-w-0">
+                    <span className="block truncate">{reach.name}</span>
+                    {/* Boja nikad sama — natpis stanja ide uz nju i u tabeli (UI.md §5). */}
+                    <span className="block truncate text-xs text-[--color-text-muted]">
+                      {reach.levelLabel}
+                    </span>
+                  </span>
                 </button>
               </th>
 
-              <td className="py-2 pr-3">
-                <span className="flex items-center gap-2">
-                  {/* Boja ide uz tekst, nikad umjesto njega (UI.md §5). */}
-                  <span
-                    aria-hidden="true"
-                    className="status-swatch h-2.5 w-2.5 shrink-0 rounded-sm border border-black/40"
-                    style={{
-                      backgroundColor: reach.color ?? '#cccccc',
-                      backgroundImage:
-                        freshness === 'unknown'
-                          ? 'repeating-linear-gradient(45deg, #5c6470 0 2px, transparent 2px 5px)'
-                          : undefined,
-                    }}
-                  />
-                  <span>{reach.levelLabel}</span>
-                </span>
-              </td>
-
-              <td className="tabular py-2 pr-3 text-right">
+              <td className="numeric py-2 pr-3 text-right whitespace-nowrap">
                 {reach.valueCm === null || reach.valueCm === undefined ? (
-                  <span className="text-[--color-text-muted]">—</span>
+                  <span className="font-sans text-[--color-text-muted]">—</span>
                 ) : (
                   <>
-                    {reach.valueCm} <span className="text-[--color-text-muted]">cm</span>
+                    <span className="font-semibold">{reach.valueCm}</span>{' '}
+                    <span className="font-sans text-xs text-[--color-text-muted]">cm</span>
                   </>
                 )}
               </td>
 
-              <td className="py-2 text-[--color-text-muted]">
+              <td className="py-2 text-xs text-[--color-text-muted]">
                 {measured ? (
                   <>
-                    <span>{measured}</span>
-                    <span className="ml-1.5">({freshnessLabel(reach)})</span>
+                    <span className="block">{measured}</span>
+                    <span className="block">{freshnessLabel(reach)}</span>
                   </>
                 ) : (
-                  /* Prazno stanje kaže šta se desilo, ne "ups" (UI.md §7). */
+                  /* Prazno stanje kaže šta se desilo, ne „ups" (UI.md §7). */
                   <span>{reach.noDataReason ?? 'Nema podatka'}</span>
                 )}
               </td>
