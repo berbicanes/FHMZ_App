@@ -141,7 +141,7 @@ export function HistoryChart({
               širine je razlika između krivulje koja se čita i one koja se nazire. */}
           <div className="-mx-4 h-[300px] w-[calc(100%+2rem)] xl:h-[360px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={points} margin={{ top: 8, right: 6, bottom: 0, left: -14 }}>
+              <AreaChart data={points} margin={{ top: 10, right: 16, bottom: 0, left: -8 }}>
                 <defs>
                   <linearGradient id="waterFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#7fb4e8" stopOpacity={0.28} />
