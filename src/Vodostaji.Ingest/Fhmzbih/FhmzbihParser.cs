@@ -267,7 +267,15 @@ public static class FhmzbihParser
             values.GetValueOrDefault("sliv"));
     }
 
-    /// <summary>Koordinate su `lat lon`, razdvojene razmakom.</summary>
+    /// <summary>
+    /// Koordinate su `lat lon`, ali **format nije isti na svim njihovim stranicama**:
+    /// Bihać ima `44.81367 15.87508`, a Reljevo `43.88669N 18.31826E`.
+    ///
+    /// Zbog toga je šest od dvanaest stanica tri dana stajalo bez koordinata i nije se
+    /// pojavljivalo na mapi. Slovo strane svijeta se skida; južna i zapadna hemisfera se
+    /// poštuju iako u BiH ne dolaze — pravilo koje vrijedi samo za jedan slučaj je pravilo
+    /// koje puca čim se granica pomjeri.
+    /// </summary>
     private static Coordinates? ParseCoordinates(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -275,12 +283,39 @@ public static class FhmzbihParser
             return null;
         }
 
-        var parts = value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var parts = value.Split(
+            [' ', '\t'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        return parts.Length == 2 &&
-               double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var lat) &&
-               double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var lon)
-            ? new Coordinates(lat, lon)
+        if (parts.Length != 2)
+        {
+            return null;
+        }
+
+        var latitude = ParseHemisphere(parts[0], 'S');
+        var longitude = ParseHemisphere(parts[1], 'W');
+
+        return latitude is not null && longitude is not null
+            ? new Coordinates(latitude.Value, longitude.Value)
+            : null;
+    }
+
+    private static double? ParseHemisphere(string text, char negative)
+    {
+        var trimmed = text.Trim();
+        var sign = 1.0;
+
+        if (trimmed.Length > 0 && char.IsLetter(trimmed[^1]))
+        {
+            if (char.ToUpperInvariant(trimmed[^1]) == char.ToUpperInvariant(negative))
+            {
+                sign = -1.0;
+            }
+
+            trimmed = trimmed[..^1].Trim();
+        }
+
+        return double.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
+            ? sign * value
             : null;
     }
 

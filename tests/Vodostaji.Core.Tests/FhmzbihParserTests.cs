@@ -148,6 +148,37 @@ public class FhmzbihParserTests
         Assert.Equal(307.600m, zenica.GaugeZero);
     }
 
+    [Theory]
+    [InlineData("44.81367 15.87508", 44.81367, 15.87508)]
+    [InlineData("43.88669N 18.31826E", 43.88669, 18.31826)]
+    [InlineData("43.94306  18.08198", 43.94306, 18.08198)]
+    public void Koordinate_se_citaju_u_oba_formata_koja_koriste(
+        string raw, double latitude, double longitude)
+    {
+        // Njihove stranice nisu dosljedne: Bihać nema slova strana svijeta, Reljevo ima.
+        // Zbog toga je šest od dvanaest stanica tri dana bilo nevidljivo na mapi.
+        var html = $"<table><tr><td>Koodrdinate stanice</td><td>{raw}</td></tr></table>";
+
+        var details = FhmzbihParser.ParseStationPage(html, "test");
+
+        var coordinates = Assert.IsType<Coordinates>(details!.Coordinates);
+        Assert.Equal(latitude, coordinates.Latitude, 5);
+        Assert.Equal(longitude, coordinates.Longitude, 5);
+    }
+
+    [Fact]
+    public void Juzna_i_zapadna_hemisfera_se_postuju_iako_u_bih_ne_dolaze()
+    {
+        // Pravilo koje vrijedi samo za jedan slučaj puca čim se granica pomjeri.
+        var html = "<table><tr><td>Koodrdinate stanice</td><td>10.5S 20.25W</td></tr></table>";
+
+        var coordinates = Assert.IsType<Coordinates>(
+            FhmzbihParser.ParseStationPage(html, "test")!.Coordinates);
+
+        Assert.Equal(-10.5, coordinates.Latitude, 5);
+        Assert.Equal(-20.25, coordinates.Longitude, 5);
+    }
+
     [Fact]
     public void Nestabilan_naziv_kljuca_za_kotu_ne_lomi_citanje()
     {

@@ -32,6 +32,9 @@ public sealed class FhmzbihSource(HttpClient httpClient, TimeProvider? timeProvi
         ("Sarajevo", "hvsCumurija"),
         ("Reljevo", "hvsReljevo"),
         ("Zenica", "hvsZenica"),
+        // Njihov pregled piše `Kiseljk`, podstranica se zove `hvsKiseljak`. Tipfeler je
+        // njihov i vjerovatno će ga jednom popraviti, pa se traži i jedno i drugo ime.
+        ("Kiseljk", "hvsKiseljak"),
         ("Kiseljak", "hvsKiseljak"),
         ("Han Bila", "hvsHBila"),
         ("Tuzla", "hvsTuzla"),
