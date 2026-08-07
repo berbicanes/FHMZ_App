@@ -54,7 +54,7 @@ export function ReachDetail({
         <button
           type="button"
           onClick={onClose}
-          className="rounded border border-[--color-border] px-2 py-1 text-xs text-[--color-text-muted] hover:text-[--color-text]"
+          className="rounded border border-[--color-border-strong] px-2 py-1 text-xs text-[--color-text-muted] hover:text-[--color-text]"
         >
           Zatvori
         </button>

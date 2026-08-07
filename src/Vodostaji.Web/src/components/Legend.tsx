@@ -21,10 +21,13 @@ const ENTRIES = [
 export function PointSourceLegend({
   agencyName,
   color,
+  ring,
   note,
 }: {
   agencyName: string
   color: string
+  /** Svijetli prsten — isti oblik kojim se ta agencija crta na mapi. */
+  ring: boolean
   note: string
 }) {
   return (
@@ -35,10 +38,14 @@ export function PointSourceLegend({
 
       <ul className="space-y-1.5">
         <li className="flex items-center gap-2.5 text-sm">
+          {/* Oblik, ne samo boja (UI.md §5) — legenda mora izgledati kao mapa. */}
           <span
             aria-hidden="true"
-            className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/40"
-            style={{ backgroundColor: color }}
+            className="h-3.5 w-3.5 shrink-0 rounded-full"
+            style={{
+              backgroundColor: color,
+              border: ring ? '2px solid #e6edf3' : '1px solid rgb(0 0 0 / 0.4)',
+            }}
           />
           <span>Izmjereno, bez ocjene opasnosti</span>
         </li>

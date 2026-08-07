@@ -42,7 +42,7 @@ export function Search({
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Rijeka ili mjesto — npr. Maglaj"
         autoComplete="off"
-        className="w-full rounded border border-[--color-border] bg-[--color-surface] px-3 py-2 text-sm placeholder:text-[--color-text-muted]"
+        className="w-full rounded border border-[--color-border-strong] bg-[--color-surface] px-3 py-2 text-sm placeholder:text-[--color-text-muted]"
       />
 
       {query.trim().length > 0 && (

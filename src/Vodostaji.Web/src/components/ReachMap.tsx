@@ -313,8 +313,18 @@ function buildLayers(instance: MapLibreMap) {
   })
 
   // Tačkasti izvori — **jedan sloj po agenciji**, nikad zajednički i nikad stopljen sa
-  // dionicama. AVP Sava daje ocjenu opasnosti, AVPJM i FHMZBIH je ne daju, a boja im dolazi
-  // iz vlastite legende svakog izvora (CLAUDE.md → Šta NE raditi).
+  // dionicama (CLAUDE.md → Šta NE raditi).
+  //
+  // Agencije se razlikuju **oblikom, ne samo bojom**. Prva verzija ih je razlikovala plavom
+  // i tirkiznom; izmjereno je da im je odnos svjetline 1.18:1, pa su oku praktično iste — a
+  // daltonisti sasvim. UI.md §5 ionako traži da boja nikad ne bude jedini nosilac. Zato
+  // jedna agencija ima puni krug sa tamnom ivicom, druga krug sa **svijetlim prstenom**:
+  // razlika koja preživi i crno-bijeli ekran.
+  const ring: Record<PointSourceId, { stroke: string; width: number; radius: number }> = {
+    avpjm: { stroke: '#0d1117', width: 1, radius: 0 },
+    fhmzbih: { stroke: '#e6edf3', width: 2.5, radius: 1 },
+  }
+
   for (const id of POINT_SOURCES) {
     instance.addSource(pointSourceId(id), {
       type: 'geojson',
@@ -326,10 +336,14 @@ function buildLayers(instance: MapLibreMap) {
       type: 'circle',
       source: pointSourceId(id),
       paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4, 10, 8],
+        'circle-radius': [
+          'interpolate', ['linear'], ['zoom'],
+          6, 4 + ring[id].radius,
+          10, 8 + ring[id].radius,
+        ],
         'circle-color': ['get', 'color'],
-        'circle-stroke-color': '#0d1117',
-        'circle-stroke-width': 1,
+        'circle-stroke-color': ring[id].stroke,
+        'circle-stroke-width': ring[id].width,
         'circle-opacity': [
           'case',
           ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.45,

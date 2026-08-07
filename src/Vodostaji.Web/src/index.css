@@ -13,7 +13,13 @@
      Ništa drugo se s njima ne takmiči. */
   --color-surface: #0d1117;
   --color-surface-raised: #161b22;
-  --color-border: #30363d;
+  /* Razdvajači. Dekorativni, pa ne padaju pod WCAG 1.4.11. */
+  --color-border: #4a5563;
+
+  /* Ivice elemenata koji se mogu fokusirati ili koristiti — polja, dugmad. Izmjereno
+     3.50:1 prema podlozi; WCAG 1.4.11 traži 3:1 za takve elemente. Prethodnih #30363d
+     je davalo 1.55:1 i padalo. */
+  --color-border-strong: #616b78;
   --color-text: #e6edf3;
   --color-text-muted: #9198a1;
 }

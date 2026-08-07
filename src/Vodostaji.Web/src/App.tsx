@@ -261,6 +261,7 @@ export default function App() {
                   key={s.sourceId}
                   agencyName={s.agencyName ?? 'izvor'}
                   color={s.sourceId === 'avpjm' ? '#4a8fd4' : '#3aa8a0'}
+                  ring={s.sourceId !== 'avpjm'}
                   note={
                     s.sourceId === 'avpjm'
                       ? 'Ova agencija objavljuje vodostaj, ali ne i ocjenu opasnosti — bojenje po pragovima im je na sajtu dostupno samo prijavljenim korisnicima. Prikazujemo brojeve i pragove onako kako ih objavljuju, bez vlastite ocjene.'
