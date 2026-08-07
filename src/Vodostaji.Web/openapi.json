@@ -349,6 +349,7 @@
           "color",
           "expectedIntervalMinutes",
           "fetchedAt",
+          "intervalIsMeasured",
           "level",
           "levelLabel",
           "name",
@@ -413,6 +414,9 @@
           "expectedIntervalMinutes": {
             "type": "integer",
             "format": "int64"
+          },
+          "intervalIsMeasured": {
+            "type": "boolean"
           },
           "publicationLagMinutes": {
             "type": "integer",

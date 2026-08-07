@@ -123,6 +123,7 @@ public static class PointSourceGeoJson
             AgeMinutes = age is null ? null : (long)Math.Round(age.Value.TotalMinutes),
             ExpectedIntervalMinutes = (long)reading.Station.ExpectedInterval.TotalMinutes,
             PublicationLagMinutes = (long)reading.Station.TypicalPublicationLag.TotalMinutes,
+            IntervalIsMeasured = reading.Station.IntervalIsMeasured,
             AgeRatio = reading.Station.MissedCycles(measurement?.MeasuredAt, now) is { } missed
                 ? Math.Round(missed, 2)
                 : null,

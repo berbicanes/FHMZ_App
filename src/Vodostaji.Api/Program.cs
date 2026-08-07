@@ -27,6 +27,7 @@ builder.Services.AddDbContext<VodostajiDbContext>(options => options.UseNpgsql(c
 builder.Services.AddScoped<IReadingStore, EfReadingStore>();
 builder.Services.AddScoped<EfHistoryReader>();
 builder.Services.AddScoped<EfPreviousReadingReader>();
+builder.Services.AddScoped<EfObservedIntervalReader>();
 builder.Services.AddSingleton(TimeProvider.System);
 
 // Jedan HttpClient po izvoru, sa User-Agentom koji nosi kontakt — LEGAL.md §2.6.

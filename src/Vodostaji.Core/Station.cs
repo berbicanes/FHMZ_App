@@ -51,6 +51,20 @@ public sealed record Station
     public TimeSpan TypicalPublicationLag { get; init; } = TimeSpan.Zero;
 
     /// <summary>
+    /// Da li je <see cref="ExpectedInterval"/> **izmjeren** iz naše historije, ili je i dalje
+    /// deklaracija adaptera o kadenci cijelog izvora.
+    ///
+    /// Razlika je bitna zato što je nepoznat ritam neizmjeren, ne brz. Dok se ne izmjeri,
+    /// zadržava se kraći deklarisani interval — greška u tom smjeru prikaže stanicu kao
+    /// zakašnjelu kad nije, a greška u suprotnom smjeru prikaže **ugašenu stanicu kao svježu**.
+    /// Od to dvoje, drugo je opasno.
+    ///
+    /// UI zato ne tvrdi "zastario" dok ritam nije izmjeren, nego kaže koliko je podatak star
+    /// i da ritam još ne znamo.
+    /// </summary>
+    public bool IntervalIsMeasured { get; init; }
+
+    /// <summary>
     /// Koliko je ciklusa propušteno. Nula znači da je podatak najsvježiji koji uopšte može biti.
     /// Vraća null kad mjerenja nema — odsustvo podatka nije stepen starosti.
     /// </summary>

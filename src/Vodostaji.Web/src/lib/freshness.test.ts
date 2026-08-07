@@ -30,8 +30,23 @@ describe('freshnessOf', () => {
     expect(freshnessOf(reach({ valueCm: 100, measuredAt: 'x', ageRatio: 3 }))).toBe('ageing')
   })
 
-  it('preko tri je zastarjelo', () => {
-    expect(freshnessOf(reach({ valueCm: 100, measuredAt: 'x', ageRatio: 3.01 }))).toBe('stale')
+  it('preko tri je zastarjelo — ali samo ako je ritam izmjeren', () => {
+    expect(
+      freshnessOf(
+        reach({ valueCm: 100, measuredAt: 'x', ageRatio: 3.01, intervalIsMeasured: true }),
+      ),
+    ).toBe('stale')
+  })
+
+  it('bez izmjerenog ritma se ne tvrdi da je zastarjelo', () => {
+    // Bihać se javlja jednom dnevno. Dok to nije izmjereno, stoji deklarisani sat, pa svaki
+    // normalan dan izgleda kao trinaest propuštenih ciklusa. Reći "zastario" bilo bi tvrdnja
+    // koju nemamo čime podupreti — kaže se koliko je star i da ritam ne znamo.
+    expect(
+      freshnessOf(
+        reach({ valueCm: 100, measuredAt: 'x', ageRatio: 13.3, intervalIsMeasured: false }),
+      ),
+    ).toBe('unmeasured')
   })
 })
 

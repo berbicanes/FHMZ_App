@@ -27,6 +27,32 @@ public abstract class SourcePipeline(SourceIngestRunner runner, TimeProvider tim
 
     /// <summary>Prepisuje GeoJSON koji mapa čita, iz zadnjeg uspješnog povlačenja.</summary>
     public abstract Task PublishAsync(IServiceProvider scoped, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Zamjenjuje deklarisani interval izmjerenim, po stanici. Adapter zna kadencu izvora,
+    /// ali ne i to da se Bihać javlja jednom dnevno a Zenica svaka dva sata.
+    /// </summary>
+    protected static async Task<SourceFetchResult> ObservedIntervalsFor(
+        IServiceProvider scoped,
+        string sourceId,
+        SourceFetchResult result,
+        TimeProvider time,
+        CancellationToken cancellationToken)
+    {
+        var reader = scoped.GetRequiredService<EfObservedIntervalReader>();
+        var observed = await reader.ReadAsync(sourceId, time.GetUtcNow(), cancellationToken)
+            .ConfigureAwait(false);
+
+        // Koliko stanica je dobilo izmjeren ritam umjesto deklarisanog. Nula znači da još
+        // nemamo dovoljno historije — što je legitimno, ali se mora vidjeti.
+        scoped.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("ObservedIntervals")
+            .LogInformation(
+                "{SourceId}: izmjeren interval za {Measured} od {Total} stanica.",
+                sourceId, observed.Count, result.Readings.Count);
+
+        return result.WithObservedIntervals(observed);
+    }
 }
 
 /// <summary>AVP Sava — poligoni dionica, geometrija se povlači odvojeno i rijetko.</summary>
@@ -93,6 +119,9 @@ public sealed class AvpSavaPipeline(
             return;
         }
 
+        result = await ObservedIntervalsFor(scoped, SourceId, result, Time, cancellationToken)
+            .ConfigureAwait(false);
+
         var previous = await PreviousReadings
             .ReadAsync(scoped, SourceId, result, cancellationToken)
             .ConfigureAwait(false);
@@ -121,6 +150,9 @@ public sealed class PointSourcePipeline(
         {
             return;
         }
+
+        result = await ObservedIntervalsFor(scoped, SourceId, result, Time, cancellationToken)
+            .ConfigureAwait(false);
 
         var previous = await PreviousReadings
             .ReadAsync(scoped, SourceId, result, cancellationToken)

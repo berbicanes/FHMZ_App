@@ -45,6 +45,12 @@ public sealed record ReachProperties
 
     public required long ExpectedIntervalMinutes { get; init; }
 
+    /// <summary>
+    /// Da li je očekivani interval izmjeren iz historije ili je i dalje deklaracija adaptera.
+    /// UI ne smije tvrditi "zastario" dok ritam stanice nije izmjeren.
+    /// </summary>
+    public required bool IntervalIsMeasured { get; init; }
+
     /// <summary>Uobičajeno kašnjenje objave kod ovog izvora. UI ga prikazuje da bi korisnik
     /// znao zašto ni najsvježiji podatak nije od maloprije.</summary>
     public required long PublicationLagMinutes { get; init; }

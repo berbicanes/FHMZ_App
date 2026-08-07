@@ -7,7 +7,7 @@ import type { ReachProperties } from '../api/types'
  * se javlja jednom dnevno i ona koja se javlja svakih 15 minuta ne stare istom brzinom,
  * pa bi fiksni prag jednu prikazivao kao zastarjelu a drugu kao svježu dok obje kasne.
  */
-export type Freshness = 'fresh' | 'ageing' | 'stale' | 'unknown'
+export type Freshness = 'fresh' | 'ageing' | 'stale' | 'unmeasured' | 'unknown'
 
 export function freshnessOf(properties: ReachProperties): Freshness {
   // Nema podatka je vlastito stanje, ne najstariji stepen starosti. Zlatno pravilo 1.
@@ -16,6 +16,10 @@ export function freshnessOf(properties: ReachProperties): Freshness {
 
   const ratio = properties.ageRatio
   if (ratio === null || ratio === undefined) return 'unknown'
+
+  // Dok ritam stanice nije izmjeren, ne tvrdimo da je podatak zastario. Nepoznat ritam je
+  // neizmjeren, ne brz — a "zastario" je tvrdnja koju bez mjerenja ne možemo podupriti.
+  if (ratio > 3 && !properties.intervalIsMeasured) return 'unmeasured'
 
   if (ratio > 3) return 'stale'
   if (ratio >= 1) return 'ageing'
@@ -31,6 +35,8 @@ export function fillOpacityOf(freshness: Freshness): number {
       return 0.6
     case 'stale':
       return 0.45
+    case 'unmeasured':
+      return 0.5
     case 'unknown':
       return 0.75
   }
@@ -48,6 +54,11 @@ export function freshnessLabel(properties: ReachProperties): string {
   }
 
   if (freshness === 'stale') return 'Podatak zastario'
+
+  // Kaže se koliko je star, ne da je zastario — razliku nosi to što ritam još ne znamo.
+  if (freshness === 'unmeasured') {
+    return `${relativeAge(properties.ageMinutes ?? 0)} · ritam stanice još nije izmjeren`
+  }
 
   return relativeAge(properties.ageMinutes ?? 0)
 }

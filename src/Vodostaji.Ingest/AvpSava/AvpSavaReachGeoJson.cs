@@ -115,6 +115,7 @@ public static class AvpSavaReachGeoJson
             AgeMinutes = age is null ? null : (long)Math.Round(age.Value.TotalMinutes),
             ExpectedIntervalMinutes = (long)reading.Station.ExpectedInterval.TotalMinutes,
             PublicationLagMinutes = (long)reading.Station.TypicalPublicationLag.TotalMinutes,
+            IntervalIsMeasured = reading.Station.IntervalIsMeasured,
 
             // Broj propuštenih ciklusa, mjeren od trenutka kad je podatak realno mogao stići.
             // UI.md §2 dijeli prikaz na <1×, 1–3× i >3×, pa mu se daje broj umjesto gotove

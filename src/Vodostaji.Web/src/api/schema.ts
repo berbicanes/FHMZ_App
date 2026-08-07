@@ -193,6 +193,7 @@ export interface components {
             ageMinutes?: number | null;
             /** Format: int64 */
             expectedIntervalMinutes: number;
+            intervalIsMeasured: boolean;
             /** Format: int64 */
             publicationLagMinutes: number;
             /** Format: double */
