@@ -1,0 +1,65 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+
+    services:
+      # Data testovi namjerno traže pravi Postgres: dvije najvažnije garancije sheme su
+      # check constraint-i, a in-memory provider ih uopšte ne izvršava.
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: vodostaji
+          POSTGRES_USER: vodostaji
+          POSTGRES_PASSWORD: vodostaji-ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vodostaji"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - run: dotnet build --configuration Release
+
+      # Testovi prave i koriste `vodostaji_test`; ime mora završavati na `_test` jer
+      # brišu tabele. Jednom su tako obrisali prikupljenu historiju iz razvojne baze.
+      - run: dotnet test --configuration Release --no-build
+        env:
+          VODOSTAJI_TEST_CONNECTION: "Host=localhost;Port=5432;Database=vodostaji_test;Username=vodostaji;Password=vodostaji-ci"
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Vodostaji.Web
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/Vodostaji.Web/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  image:
+    runs-on: ubuntu-latest
+    needs: [dotnet, web]
+    steps:
+      - uses: actions/checkout@v4
+      # Gradi se i kad se ne objavljuje — slika koja se ne gradi otkriva se tek pri deployu.
+      - run: docker build -t vodostaji:${{ github.sha }} .

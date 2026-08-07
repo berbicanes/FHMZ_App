@@ -19,8 +19,16 @@ builder.Host.UseSerilog((context, configuration) => configuration
     .Enrich.FromLogContext()
     .WriteTo.Console());
 
-var connection = builder.Configuration.GetConnectionString("Vodostaji")
-    ?? Environment.GetEnvironmentVariable("VODOSTAJI_CONNECTION")
+// Redoslijed je bitan i bio je pogrešan.
+//
+// `appsettings.json` se pakuje u sliku i nosi razvojni connection string. Dok je stajao
+// prvi, gazio je varijablu okruženja — kontejner se uporno spajao na `localhost` i padao,
+// a razlog se vidio tek u logu. Okruženje sada pobjeđuje, jer je ono jedino što se pri
+// deployu stvarno mijenja.
+//
+// `ConnectionStrings__Vodostaji` i dalje radi kroz standardnu ASP.NET konfiguraciju.
+var connection = Environment.GetEnvironmentVariable("VODOSTAJI_CONNECTION")
+    ?? builder.Configuration.GetConnectionString("Vodostaji")
     ?? DesignTimeDbContextFactory.LocalDevelopmentConnection;
 
 builder.Services.AddDbContext<VodostajiDbContext>(options => options.UseNpgsql(connection));

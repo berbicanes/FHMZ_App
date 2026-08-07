@@ -29,7 +29,7 @@ Ovo je aplikacija u kojoj netačan podatak može navesti nekoga na pogrešnu odl
 ## Komande
 
 ```bash
-docker compose up -d                  # Postgres + PostGIS + Redis — TRAŽE GA Data testovi
+docker compose up -d                  # Postgres + PostGIS — TRAŽE GA Data testovi
 dotnet build
 dotnet test                           # Data testovi padaju bez baze, i to namjerno
                                       # Testovi rade nad `vodostaji_test`, NIKAD nad `vodostaji`.
@@ -39,6 +39,10 @@ dotnet run --project src/Vodostaji.Api
 # Migracije. Startup je zasad Data jer Api još ne postoji — kad dođe, prebaci na njega.
 dotnet ef migrations add <Name> -p src/Vodostaji.Data -s src/Vodostaji.Data
 dotnet ef database update -p src/Vodostaji.Data -s src/Vodostaji.Data
+
+docker build -t vodostaji .           # jedna slika: API + sagrađeni SPA
+docker run -p 8080:8080 -e VODOSTAJI_CONNECTION="Host=…" vodostaji
+# Okruženje gazi appsettings.json. Obrnuto je bilo, i kontejner se uporno spajao na localhost.
 
 dotnet run --project tools/Probe                        # snimi fixtures sa izvora
 dotnet run --project tools/Probe -- --watch 20 --cycles 72   # mjeri pomak vremenskih zona
@@ -57,7 +61,7 @@ Ako komanda ne postoji jer faza još nije došla — dodaj je ovdje čim je napr
 
 ## Stack
 
-.NET 8 / ASP.NET Core Minimal API · PostgreSQL 16 + PostGIS · Redis · React 18 + TypeScript + Vite · **MapLibre GL JS** · Tailwind · Recharts · TanStack Query · AngleSharp (scraping) · Serilog · xUnit · Vitest · Azure App Service.
+.NET 8 / ASP.NET Core Minimal API · PostgreSQL 16 + PostGIS · Redis *(planiran, još neupotrijebljen — vidi docker-compose.yml)* · React 18 + TypeScript + Vite · **MapLibre GL JS** · Tailwind · Recharts · TanStack Query · AngleSharp (scraping) · Serilog · xUnit · Vitest · Azure App Service.
 
 Ne uvodi nove biblioteke bez pitanja. Obrazloži zašto prije nego dodaš.
 

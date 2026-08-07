@@ -23,19 +23,14 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    container_name: vodostaji-redis
-    # Keš nikad ne smije biti agresivniji od osvježavanja izvora — to bi bila lažna
-    # svježina (CLAUDE.md → Šta NE raditi). TTL se postavlja u kodu, po izvoru.
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+# Redis je namjerno izostavljen.
+#
+# Stoji u stacku u CLAUDE.md kao plan, ali ga nijedan red koda ne koristi: mapa se servira
+# kao statički GeoJSON koji ingest job prepisuje, pa keša nema šta držati. Servis koji radi
+# a nikom ne treba izgleda kao dio sistema i navodi na pogrešnu sliku kako sistem radi.
+#
+# Vraća se onog dana kad postoji nešto što se stvarno keširaju — i tada uz TTL koji nije
+# duži od osvježavanja izvora, jer bi to bila lažna svježina.
 
 volumes:
   postgres-data:
