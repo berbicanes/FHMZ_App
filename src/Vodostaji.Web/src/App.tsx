@@ -228,7 +228,7 @@ export default function App() {
           )}
         </main>
 
-        <aside className="scroll-soft flex w-full flex-col overflow-y-auto border-t border-[--color-line] bg-[--color-ink-900] lg:w-[25rem] lg:border-t-0 lg:border-l">
+        <aside className="scroll-soft flex w-full flex-col overflow-y-auto border-t border-[--color-line] bg-[--color-ink-900] lg:w-[27rem] xl:w-[31rem] lg:border-t-0 lg:border-l">
           <div className="border-b border-[--color-line] p-4">
             <Search
               reaches={allReaches}

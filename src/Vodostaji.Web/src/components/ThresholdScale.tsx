@@ -34,18 +34,21 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
     <section className="mt-5" aria-label="Vodostaj u odnosu na pragove">
       <h3 className="eyebrow mb-3">Pragovi</h3>
 
-      <div className="relative h-2 rounded-full bg-[--color-ink-700]">
-        {/* Ispunjeni dio do trenutne vrijednosti. Neutralne boje — ovo nije ocjena
-            opasnosti, nego položaj. */}
+      <div className="relative h-3 rounded-full bg-[--color-ink-800] ring-1 ring-[--color-line]">
+        {/* Voda do trenutne vrijednosti. Ista plava kao krivulja u grafu ispod — skala i
+            graf moraju čitati kao jedan sistem, ne kao dvije nepovezane sličice. */}
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-[--color-ink-500]"
-          style={{ width: `${Math.max(position(value), 0)}%` }}
+          className="absolute inset-y-0 left-0 rounded-full"
+          style={{
+            width: `${Math.max(position(value), 0)}%`,
+            background: 'linear-gradient(90deg, rgb(126 180 232 / 0.35), rgb(142 197 255 / 0.7))',
+          }}
         />
 
         {thresholds.map((threshold) => (
           <span
             key={threshold.label}
-            className="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded bg-[--color-text-muted]"
+            className="absolute top-1/2 h-5 w-px -translate-x-1/2 -translate-y-1/2 bg-[--color-ink-500]"
             style={{ left: `${position(threshold.valueCm)}%` }}
             aria-hidden="true"
           />
@@ -54,13 +57,19 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
         {/* Kazaljka trenutne vrijednosti. Nosi boju statusa jer je to jedina stvar na
             skali koja smije biti najsvjetlija. */}
         <span
-          className="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-[--color-ink-900]"
+          className="absolute top-1/2 h-6 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-[--color-ink-850]"
           style={{
             left: `${position(value)}%`,
             backgroundColor: reach.color ?? '#cccccc',
           }}
           aria-hidden="true"
         />
+      </div>
+
+      {/* Krajevi skale u brojevima — bez njih se ne zna koliki je raspon koji se gleda. */}
+      <div className="tabular mt-1.5 flex justify-between text-[11px] text-[--color-text-muted]">
+        <span>{Math.round(min)} cm</span>
+        <span>{Math.round(max)} cm</span>
       </div>
 
       <ul className="mt-3 space-y-1.5 text-sm">

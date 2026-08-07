@@ -62,7 +62,7 @@ export function ReachDetail({
       <div className="mb-4">
         {hasValue ? (
           <p className="numeric flex items-baseline gap-2 leading-none">
-            <span className="text-[3.25rem] font-bold">{reach.valueCm}</span>
+            <span className="text-[3.25rem] font-bold xl:text-[4rem]">{reach.valueCm}</span>
             <span className="text-lg font-medium text-[--color-text-muted]">cm</span>
           </p>
         ) : (
