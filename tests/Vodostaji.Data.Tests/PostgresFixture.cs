@@ -70,11 +70,36 @@ public sealed class PostgresFixture : IAsyncLifetime
             .Options);
 
     /// <summary>Svaki test kreće od prazne baze — redoslijed testova ne smije ništa značiti.</summary>
+    /// <summary>
+    /// Prazni **sve** tabele iz modela, a ne nabrojan spisak.
+    ///
+    /// Spisak je bio nabrojan i zastario je čim je dodata tabela `observations`: testovi su
+    /// prolazili jedan po jedan a padali zajedno, jer je svaki nasljeđivao redove prethodnog.
+    /// Čitanje iz modela znači da sljedeća tabela ne može ponoviti istu grešku.
+    /// </summary>
     public async Task ResetAsync()
     {
         await using var context = CreateContext();
-        await context.Database.ExecuteSqlRawAsync(
-            "TRUNCATE station_states, stations, measurements RESTART IDENTITY;");
+
+        var tables = context.Model.GetEntityTypes()
+            .Select(t => t.GetTableName())
+            .Where(name => name is { Length: > 0 })
+            .Distinct()
+            .Select(name => $"\"{name}\"")
+            .ToArray();
+
+        if (tables.Length == 0)
+        {
+            return;
+        }
+
+        // Sastavlja se izvan poziva: analizator (EF1002) opravdano gleda popunjene stringove
+        // na mjestu poziva. Imena ovdje dolaze iz EF modela, ne od korisnika, pa injekcije
+        // nema — ali oblik poziva to ne može znati, a gašenje upozorenja bi vrijedilo i za
+        // sve buduće izmjene ovog metoda.
+        var sql = "TRUNCATE " + string.Join(", ", tables) + " RESTART IDENTITY CASCADE;";
+
+        await context.Database.ExecuteSqlRawAsync(sql);
     }
 
     private async Task EnsureDatabaseExistsAsync(string database)

@@ -106,6 +106,13 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "parameter",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -169,6 +176,24 @@
         "type": "integer",
         "format": "int32"
       },
+      "HistoryParameter": {
+        "type": "object",
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "HistoryPoint": {
         "type": "object",
         "properties": {
@@ -176,7 +201,7 @@
             "type": "string",
             "format": "date-time"
           },
-          "valueCm": {
+          "value": {
             "type": "number",
             "format": "double"
           },
@@ -238,9 +263,11 @@
           "agencyName",
           "days",
           "name",
+          "parameter",
           "points",
           "sourceId",
-          "stationKey"
+          "stationKey",
+          "unit"
         ],
         "type": "object",
         "properties": {
@@ -263,6 +290,21 @@
           "days": {
             "type": "integer",
             "format": "int32"
+          },
+          "parameter": {
+            "type": "string",
+            "nullable": true
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true
+          },
+          "available": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryParameter"
+            },
+            "nullable": true
           },
           "points": {
             "type": "array",

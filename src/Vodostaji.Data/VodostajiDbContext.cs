@@ -11,6 +11,8 @@ public class VodostajiDbContext(DbContextOptions<VodostajiDbContext> options) : 
 
     public DbSet<MeasurementRow> Measurements => Set<MeasurementRow>();
 
+    public DbSet<ObservationRow> Observations => Set<ObservationRow>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.HasPostgresExtension("postgis");
@@ -78,6 +80,39 @@ public class VodostajiDbContext(DbContextOptions<VodostajiDbContext> options) : 
             entity.HasIndex(e => new { e.SourceId, e.StationKey, e.MeasuredAt })
                 .HasDatabaseName("ix_measurements_station_time_desc")
                 .IsDescending(false, false, true);
+        });
+
+        builder.Entity<ObservationRow>(entity =>
+        {
+            entity.ToTable("observations");
+            entity.HasKey(e => e.Id);
+
+            // Bez zadate preciznosti — izvor šalje 5.824 m³/s i 22.0 °C, i oboje se čuva
+            // kako je poslato. Zaokruživanje u shemi je gubitak koji se ne da vratiti.
+            entity.Property(e => e.Value).HasColumnType("numeric");
+
+            entity.Property(e => e.Parameter)
+                .HasConversion<string>()
+                .HasMaxLength(32)
+                .HasDefaultValue(ObservationParameter.Unknown);
+
+            entity.Property(e => e.Unit).HasMaxLength(16);
+            entity.Property(e => e.ParameterLabelOriginal).HasMaxLength(128);
+
+            // Parametar **mora** biti u ključu. Bez njega bi temperatura i proticaj sa iste
+            // stanice u istom satu bili isti red, pa bi jedan tiho pregazio drugi.
+            entity.HasIndex(e => new { e.SourceId, e.StationKey, e.Parameter, e.MeasuredAt })
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.SourceId, e.StationKey, e.Parameter, e.MeasuredAt })
+                .HasDatabaseName("ix_observations_station_param_time_desc")
+                .IsDescending(false, false, false, true);
+
+            // Vodostaj živi u `measurements` i nigdje drugdje. Isti broj u dvije tabele su
+            // dva mjesta koja se s vremenom raziđu, a onda se ne zna koje je tačno.
+            entity.ToTable(table => table.HasCheckConstraint(
+                "ck_observations_no_water_level",
+                "\"Parameter\" <> 'WaterLevel'"));
         });
     }
 }

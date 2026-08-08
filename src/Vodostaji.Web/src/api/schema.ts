@@ -126,11 +126,16 @@ export interface components {
          * @enum {integer}
          */
         CircuitState: 0 | 1 | 2;
+        HistoryParameter: {
+            parameter?: string | null;
+            label?: string | null;
+            unit?: string | null;
+        };
         HistoryPoint: {
             /** Format: date-time */
             measuredAt?: string;
             /** Format: double */
-            valueCm?: number;
+            value?: number;
             level?: string | null;
         };
         ReachFeature: {
@@ -150,6 +155,9 @@ export interface components {
             river?: string | null;
             /** Format: int32 */
             days: number;
+            parameter: string | null;
+            unit: string | null;
+            available?: components["schemas"]["HistoryParameter"][] | null;
             points: components["schemas"]["HistoryPoint"][] | null;
             thresholds?: components["schemas"]["ReachThreshold"][] | null;
             thresholdsDefinedBy?: string | null;
@@ -367,6 +375,7 @@ export interface operations {
         parameters: {
             query?: {
                 days?: number;
+                parameter?: string;
             };
             header?: never;
             path: {

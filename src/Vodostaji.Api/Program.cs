@@ -206,6 +206,7 @@ app.MapGet("/api/v1/reaches/{sourceId}/{stationKey}/history", async (
     string sourceId,
     string stationKey,
     int? days,
+    string? parameter,
     EfHistoryReader reader,
     TimeProvider time,
     CancellationToken ct) =>
@@ -213,7 +214,14 @@ app.MapGet("/api/v1/reaches/{sourceId}/{stationKey}/history", async (
     // Samo 7 i 30 dana. Proizvoljan broj bi bio API koji obećava rezolucije koje nemamo.
     var window = days == 30 ? 30 : 7;
 
-    var history = await reader.ReadAsync(sourceId, stationKey, window, time.GetUtcNow(), ct);
+    // Nepoznato ime parametra pada na vodostaj, a ne na `Unknown`: `Unknown` bi vratio
+    // prazan graf bez objašnjenja, a vodostaj je ono što je korisnik i tražio.
+    var which = Enum.TryParse<ObservationParameter>(parameter, ignoreCase: true, out var parsed)
+        && parsed != ObservationParameter.Unknown
+            ? parsed
+            : ObservationParameter.WaterLevel;
+
+    var history = await reader.ReadAsync(sourceId, stationKey, window, time.GetUtcNow(), ct, which);
 
     return history is null
         ? Results.NotFound(new

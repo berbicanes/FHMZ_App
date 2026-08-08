@@ -23,6 +23,9 @@ public sealed class EfReadingStore(VodostajiDbContext context) : IReadingStore
 
             await AppendMeasurementAsync(reading, result.FetchedAt, cancellationToken)
                 .ConfigureAwait(false);
+
+            await AppendObservationsAsync(reading, result.FetchedAt, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -146,5 +149,70 @@ public sealed class EfReadingStore(VodostajiDbContext context) : IReadingStore
             Level = reading.Level,
             FirstFetchedAt = fetchedAt,
         });
+    }
+
+    /// <summary>
+    /// Ostala mjerenja — proticaj, temperatura vode, padavine, podzemne vode.
+    ///
+    /// <para>
+    /// Ide u jednom upitu po stanici umjesto jednog po mjerenju. Sedam parametara puta 150
+    /// stanica je preko hiljadu provjera po ciklusu, a ciklus je svakih 15 minuta; to bi
+    /// bazu opteretilo bez ijednog razloga osim jednostavnijeg koda.
+    /// </para>
+    ///
+    /// <para>
+    /// Vodostaj se ovdje ne pojavljuje — on ide u `measurements`. To čuva i CHECK u shemi,
+    /// pa greška u ovom metodu ne može tiho udvostručiti podatak.
+    /// </para>
+    /// </summary>
+    private async Task AppendObservationsAsync(
+        StationReading reading, DateTimeOffset fetchedAt, CancellationToken cancellationToken)
+    {
+        var fresh = reading.Observations
+            .Where(o => o.Parameter != ObservationParameter.WaterLevel)
+            .ToList();
+
+        if (fresh.Count == 0)
+        {
+            return;
+        }
+
+        var sourceId = reading.Station.SourceId;
+        var stationKey = reading.Station.StationKey;
+        var earliest = fresh.Min(o => o.MeasuredAt);
+
+        // Dohvat postojećih **od najstarijeg mjerenja u ovoj grupi naovamo**. Bez granice bi
+        // upit vukao cijelu historiju stanice svakih 15 minuta.
+        var existing = await context.Observations
+            .Where(o => o.SourceId == sourceId &&
+                        o.StationKey == stationKey &&
+                        o.MeasuredAt >= earliest)
+            .Select(o => new { o.Parameter, o.MeasuredAt })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var seen = existing
+            .Select(o => (o.Parameter, o.MeasuredAt))
+            .ToHashSet();
+
+        foreach (var observation in fresh)
+        {
+            if (!seen.Add((observation.Parameter, observation.MeasuredAt)))
+            {
+                continue;
+            }
+
+            context.Observations.Add(new ObservationRow
+            {
+                SourceId = sourceId,
+                StationKey = stationKey,
+                Parameter = observation.Parameter,
+                ParameterLabelOriginal = observation.ParameterLabelOriginal,
+                Value = observation.Value,
+                Unit = observation.Unit,
+                MeasuredAt = observation.MeasuredAt,
+                FirstFetchedAt = fetchedAt,
+            });
+        }
     }
 }

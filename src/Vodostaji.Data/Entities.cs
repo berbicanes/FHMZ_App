@@ -106,3 +106,44 @@ public class MeasurementRow
 
     public required DateTimeOffset FirstFetchedAt { get; set; }
 }
+
+/// <summary>
+/// Historija ostalih mjerenja — proticaj, temperatura vode, padavine, podzemne vode.
+///
+/// <para>
+/// Zasebna tabela od <see cref="MeasurementRow"/>, a ne dodatna kolona u njoj. Vodostaj ima
+/// jedinicu koja je uvijek cm i stupanj opasnosti koji izvor tvrdi; ovi nemaju ni jedno ni
+/// drugo, a imaju jedinicu koja se mijenja po parametru. Guranje u istu tabelu tražilo bi
+/// kolonu `Level` koja je za temperaturu besmislena i kolonu `ValueCm` koja za °C laže već
+/// imenom.
+/// </para>
+///
+/// <para>
+/// Jedinstveni indeks ide na (izvor, stanica, <b>parametar</b>, vrijeme mjerenja). Bez
+/// parametra u ključu bi temperatura i proticaj izmjereni u isti sat bili isti red.
+/// </para>
+/// </summary>
+public class ObservationRow
+{
+    public long Id { get; set; }
+
+    public required string SourceId { get; set; }
+
+    public required string StationKey { get; set; }
+
+    /// <summary>`Unknown` je nula, pa kolona sa podrazumijevanom vrijednošću ispada
+    /// nepoznata umjesto da slučajno postane konkretan parametar.</summary>
+    public required ObservationParameter Parameter { get; set; }
+
+    /// <summary>Naziv kako ga izvor piše. Čuva se da bi se nepoznat parametar mogao prikazati.</summary>
+    public required string ParameterLabelOriginal { get; set; }
+
+    public required decimal Value { get; set; }
+
+    /// <summary>Doslovna jedinica izvora. Ne preračunava se — vidi <see cref="Observation"/>.</summary>
+    public required string Unit { get; set; }
+
+    public required DateTimeOffset MeasuredAt { get; set; }
+
+    public required DateTimeOffset FirstFetchedAt { get; set; }
+}

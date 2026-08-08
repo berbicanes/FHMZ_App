@@ -40,13 +40,15 @@ export function HistoryChart({
   stationKey: string
 }) {
   const [days, setDays] = useState<Range>(7)
+  // Prazan string znači „vodostaj" — server na nepoznato ime i tako pada na njega.
+  const [parameter, setParameter] = useState('WaterLevel')
 
   const history = useQuery({
     // Ključ ide uz izvor. Bez toga graf jedne rijeke završi pod imenom druge.
-    queryKey: ['history', sourceId, stationKey, days],
+    queryKey: ['history', sourceId, stationKey, days, parameter],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/reaches/${encodeURIComponent(sourceId)}/${encodeURIComponent(stationKey)}/history?days=${days}`,
+        `/api/v1/reaches/${encodeURIComponent(sourceId)}/${encodeURIComponent(stationKey)}/history?days=${days}&parameter=${encodeURIComponent(parameter)}`,
       )
       if (!response.ok) throw new Error(`Historija nije dostupna (${response.status}).`)
       return (await response.json()) as ReachHistory
@@ -57,7 +59,7 @@ export function HistoryChart({
   const points = useMemo<Point[]>(
     () =>
       (history.data?.points ?? [])
-        .map((p) => ({ t: new Date(p.measuredAt ?? '').getTime(), value: p.valueCm ?? 0 }))
+        .map((p) => ({ t: new Date(p.measuredAt ?? '').getTime(), value: p.value ?? 0 }))
         .filter((p) => Number.isFinite(p.t)),
     [history.data],
   )
@@ -80,6 +82,10 @@ export function HistoryChart({
   }, [points, thresholds])
 
   const last = points.at(-1)
+  const unit = history.data?.unit ?? 'cm'
+  const label =
+    history.data?.available?.find((a) => a.parameter === parameter)?.label ?? 'Vodostaj'
+  const available = history.data?.available ?? []
   const summary = useMemo(() => seriesSummary(points.map((p) => p.value)), [points])
 
   return (
@@ -116,6 +122,33 @@ export function HistoryChart({
           ))}
         </div>
       </div>
+
+      {/* Izbor parametra. Nudi se **samo ono što stanica stvarno ima u historiji**, pa
+          nijedan izbor ne vodi u prazan graf. Kad je dostupan samo vodostaj, izbora nema. */}
+      {available.length > 1 && (
+        <div
+          role="group"
+          aria-label="Parametar grafa"
+          className="mb-3 flex flex-wrap gap-1.5"
+        >
+          {available.map((option) => (
+            <button
+              key={option.parameter}
+              type="button"
+              onClick={() => setParameter(option.parameter ?? 'WaterLevel')}
+              aria-pressed={parameter === option.parameter}
+              className={`rounded-chip border px-2.5 py-1 text-xs transition-colors ${
+                parameter === option.parameter
+                  ? 'border-line-strong bg-ink-800 text-fg'
+                  : 'border-line text-fg-muted hover:text-fg-soft'
+              }`}
+            >
+              {option.label}
+              <span className="ml-1 text-fg-muted">{option.unit}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {history.isPending && (
         <div className="h-[300px] animate-pulse rounded-card bg-ink-800 xl:h-[360px]" />
@@ -233,7 +266,7 @@ export function HistoryChart({
                       minute: '2-digit',
                     })
                   }
-                  formatter={(value: number) => [`${value} cm`, 'Vodostaj']}
+                  formatter={(value: number) => [`${cm(value)} ${unit}`, label]}
                 />
 
                 <Area
@@ -263,10 +296,10 @@ export function HistoryChart({
 
           {/* Osa nosi samo brojeve; jedinica stoji jednom, ispod. */}
           <div className="mt-2 flex items-baseline justify-between text-xs text-fg-muted">
-            <span>cm</span>
+            <span>{unit}</span>
             {last && (
               <span className="tabular">
-                zadnje: {cm(last.value)} cm ·{' '}
+                zadnje: {cm(last.value)} {unit} ·{' '}
                 {new Date(last.t).toLocaleString('bs-BA', {
                   day: 'numeric',
                   month: 'numeric',
@@ -284,9 +317,9 @@ export function HistoryChart({
            */}
           {summary && (
             <dl className="mt-3 grid grid-cols-3 gap-1.5">
-              <Stat label="Najniže">{cm(summary.min)} cm</Stat>
-              <Stat label="Najviše">{cm(summary.max)} cm</Stat>
-              <Stat label="Raspon">{cm(summary.span)} cm</Stat>
+              <Stat label="Najniže">{cm(summary.min)} {unit}</Stat>
+              <Stat label="Najviše">{cm(summary.max)} {unit}</Stat>
+              <Stat label="Raspon">{cm(summary.span)} {unit}</Stat>
             </dl>
           )}
 
