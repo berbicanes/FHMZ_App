@@ -10,6 +10,7 @@ import type { components } from './schema'
  */
 export type ReachProperties = components['schemas']['ReachProperties']
 export type ReachThreshold = components['schemas']['ReachThreshold']
+export type ReachObservation = components['schemas']['ReachObservation']
 export type ReachMeta = components['schemas']['ReachMeta']
 export type SourceStatus = components['schemas']['SourceStatus']
 export type StationProperties = components['schemas']['StationProperties']

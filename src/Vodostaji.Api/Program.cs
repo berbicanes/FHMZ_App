@@ -11,6 +11,7 @@ using Vodostaji.Ingest;
 using Vodostaji.Ingest.AvpSava;
 using Vodostaji.Ingest.Avpjm;
 using Vodostaji.Ingest.Fhmzbih;
+using Vodostaji.Ingest.Wiski;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,7 @@ builder.Services.AddHttpClient<AvpSavaGeometrySource>(ConfigureSourceClient);
 builder.Services.AddHttpClient<AvpSavaStationSource>(ConfigureSourceClient);
 builder.Services.AddHttpClient<AvpjmSource>(ConfigureSourceClient);
 builder.Services.AddHttpClient<FhmzbihSource>(ConfigureSourceClient);
+builder.Services.AddHttpClient<WiskiSource>(ConfigureSourceClient);
 
 // Jedan pipeline po izvoru. Dodavanje trećeg izvora je dodavanje jedne registracije;
 // ne postoji mjesto na kojem bi se dva izvora mogla nehotice preplesti.
@@ -75,6 +77,17 @@ builder.Services.AddSingleton<SourcePipeline>(services => new PointSourcePipelin
     PointMapFileFor(services, FhmzbihSource.Id),
     services.GetRequiredService<TimeProvider>()));
 
+// Četvrti izvor: WISKI izvoz iste agencije kao `avp-sava`, ali drugi sistem i drugi podaci
+// — 98 tačaka sa vodostajem, proticajem i temperaturom vode, bez ijedne ocjene opasnosti.
+// Zaseban pipeline i zasebna legenda; slojevi se ne stapaju (SOURCES.md §4.5).
+builder.Services.AddSingleton<SourcePipeline>(services => new PointSourcePipeline(
+    new SourceIngestRunner(
+        services.GetRequiredService<WiskiSource>(),
+        services.GetRequiredService<TimeProvider>()),
+    new WiskiLegend(),
+    PointMapFileFor(services, WiskiSource.Id),
+    services.GetRequiredService<TimeProvider>()));
+
 builder.Services.AddSingleton(services => new ReachMapFile(
     Path.Combine(builder.Environment.ContentRootPath, "data", "reaches.geojson"),
     services.GetRequiredService<ILogger<ReachMapFile>>()));
@@ -87,7 +100,7 @@ builder.Services.AddSingleton(services => new StationMapFile(
 
 // Jedan fajl po tačkastom izvoru. Slojevi se ne stapaju ni na disku.
 builder.Services.AddSingleton<IReadOnlyDictionary<string, PointMapFile>>(services =>
-    new[] { AvpjmSource.Id, FhmzbihSource.Id }.ToDictionary(
+    new[] { AvpjmSource.Id, FhmzbihSource.Id, WiskiSource.Id }.ToDictionary(
         id => id,
         id => new PointMapFile(
             id,

@@ -110,6 +110,15 @@ public sealed record ReachProperties
 
     public IReadOnlyList<ReachThreshold>? Thresholds { get; init; }
 
+    /// <summary>
+    /// Ostala mjerenja na istoj stanici — temperatura vode, proticaj, padavine.
+    ///
+    /// Svako nosi **vlastito vrijeme i vlastitu starost**, jer ista stanica u istom trenutku
+    /// zna imati svjež vodostaj i nivo podzemne vode star četiri mjeseca (SOURCES.md §4.5).
+    /// Jedna starost za cijelu stanicu bi jedno od to dvoje prikazala kao laž.
+    /// </summary>
+    public IReadOnlyList<ReachObservation>? Observations { get; init; }
+
     public string? ThresholdsDefinedBy { get; init; }
 }
 
@@ -121,6 +130,21 @@ public sealed record ReachProperties
 /// provjerljiv: ako je bosanski naziv pogrešan, original stoji odmah do njega i vidi se.
 /// Kad prevoda nema, oba su ista.
 /// </summary>
+/// <summary>
+/// Jedno mjerenje jednog parametra, spremno za prikaz.
+///
+/// <see cref="Label"/> je naziv koji izvor sam daje („Temperatura vode", „Proticaj") — ovdje
+/// se ništa ne prevodi jer je već na bosanskom. <see cref="Unit"/> je doslovno njihova
+/// jedinica; preračunavanje je tiha prilika da se pogriješi za faktor sto.
+/// </summary>
+public sealed record ReachObservation(
+    string Parameter,
+    string Label,
+    decimal Value,
+    string Unit,
+    DateTimeOffset MeasuredAt,
+    long AgeMinutes);
+
 public sealed record ReachThreshold(
     string Label,
     decimal ValueCm,

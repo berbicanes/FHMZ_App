@@ -30,6 +30,23 @@ public abstract record StationReading
     /// <summary>Pragovi agencije, kad ih izvor daje. Prikazuju se, iz njih se ne zaključuje.</summary>
     public Thresholds? Thresholds { get; init; }
 
+    /// <summary>
+    /// Ostala mjerenja na istoj stanici — temperatura vode, proticaj, padavine.
+    ///
+    /// <para>
+    /// Stoji na osnovnom tipu, ne samo na <see cref="Measured"/>, jer stanica **smije imati
+    /// temperaturu a nemati vodostaj**. U WISKI izvozu takvih ima: 13 stanica mjeri
+    /// temperaturu vode, a nisu sve u sloju sa vodostajem. Kad bi ovo stajalo samo na
+    /// izmjerenom očitanju, ta bi mjerenja nestala zajedno sa vodostajem kojeg nema.
+    /// </para>
+    ///
+    /// <para>
+    /// Vodostaj se ovdje **ne ponavlja** — on je <see cref="Measurement"/>. Isti broj na dva
+    /// mjesta je dva mjesta na kojima se mogu razići.
+    /// </para>
+    /// </summary>
+    public IReadOnlyList<Observation> Observations { get; init; } = [];
+
     /// <summary>Stupanj opasnosti kako ga tvrdi izvor.</summary>
     public abstract AlertLevel Level { get; }
 

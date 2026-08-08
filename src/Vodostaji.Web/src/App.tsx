@@ -38,6 +38,8 @@ const SOURCE_NOTE: Record<string, string> = {
     'Ova agencija objavljuje vodostaj, ali ne i ocjenu opasnosti — bojenje po pragovima im je na sajtu dostupno samo prijavljenim korisnicima. Prikazujemo brojeve i pragove onako kako ih objavljuju, bez vlastite ocjene.',
   fhmzbih:
     'Ova agencija objavljuje vodostaj i trend, ali ne i ocjenu opasnosti po stanici. Trend prikazujemo onako kako ga ona objavi, a ne izvodimo ga sami.',
+  'avp-sava-wiski':
+    'Isti vodoprivredni subjekt kao dionice na Savi, ali drugi sistem: mjerne tačke sa vodostajem, proticajem i temperaturom vode. Ovaj izvoz ne objavljuje nijedan prag ni ocjenu opasnosti, pa je nema ni ovdje. Dio stanica mjeri samo temperaturu ili padavine — one nemaju vodostaj i to piše.',
 }
 
 export default function App() {

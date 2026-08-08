@@ -22,6 +22,15 @@ public enum ClockConvention
 
     /// <summary>Lokalno zidno vrijeme sa punim DST pravilima. FHMZBIH (SOURCES.md §3).</summary>
     LocalWithDst,
+
+    /// <summary>
+    /// Izvor **sam nosi pomak** u svakoj vrijednosti, npr. `2026-08-08T21:00:00.000+02:00`.
+    ///
+    /// Ovdje se ništa ne rekonstruiše i ništa se ne pretpostavlja — trenutak je jednoznačan.
+    /// To je jedina konvencija bez rizika, i jedini razlog zbog kojeg WISKI izvoz AVP Save
+    /// nema nijedan od problema opisanih u SOURCES.md §1.6 i §2.
+    /// </summary>
+    ExplicitInValue,
 }
 
 /// <summary>
@@ -78,6 +87,11 @@ public sealed record SourceClock
             ClockConvention.Unverified =>
                 new DateTimeOffset(wallClock, PessimisticOffset).ToUniversalTime(),
 
+            // Vrijednost sa vlastitim pomakom se ne smije čitati kao zidno vrijeme — ako
+            // ovdje završi, pozivalac je uzeo pogrešnu putanju i to je greška u kodu.
+            ClockConvention.ExplicitInValue => throw new InvalidOperationException(
+                "Izvor nosi pomak u samoj vrijednosti; koristi ResolveExplicit, ne Resolve."),
+
             _ => throw new InvalidOperationException($"Nepoznata konvencija: {Convention}"),
         };
     }
@@ -87,6 +101,23 @@ public sealed record SourceClock
     /// Milisekunde se prvo čitaju doslovno, pa se dobijeno zidno vrijeme provuče kroz
     /// <see cref="Resolve"/> — tako se ista pretpostavka primjenjuje na oba oblika ulaza.
     /// </summary>
+    /// <summary>
+    /// Trenutak koji je izvor već jednoznačno odredio. Samo se svodi na UTC.
+    ///
+    /// Postoji kao zasebna metoda, a ne kao tiho propuštanje kroz <see cref="Resolve"/>, da
+    /// bi se u kodu vidjelo koji izvori uopšte nemaju problem sa zonom.
+    /// </summary>
+    public DateTimeOffset ResolveExplicit(DateTimeOffset instant)
+    {
+        if (Convention != ClockConvention.ExplicitInValue)
+        {
+            throw new InvalidOperationException(
+                $"ResolveExplicit traži ExplicitInValue, a konvencija je {Convention}.");
+        }
+
+        return instant.ToUniversalTime();
+    }
+
     public DateTimeOffset ResolveEpochMilliseconds(long milliseconds) =>
         Resolve(DateTime.SpecifyKind(
             DateTimeOffset.FromUnixTimeMilliseconds(milliseconds).UtcDateTime,

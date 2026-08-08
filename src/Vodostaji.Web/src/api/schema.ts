@@ -174,6 +174,17 @@ export interface components {
             /** Format: int32 */
             withoutGeometry: number;
         };
+        ReachObservation: {
+            parameter?: string | null;
+            label?: string | null;
+            /** Format: double */
+            value?: number;
+            unit?: string | null;
+            /** Format: date-time */
+            measuredAt?: string;
+            /** Format: int64 */
+            ageMinutes?: number;
+        };
         ReachProperties: {
             sourceId: string | null;
             stationKey: string | null;
@@ -215,6 +226,7 @@ export interface components {
             sourceUrl?: string | null;
             noDataReason?: string | null;
             thresholds?: components["schemas"]["ReachThreshold"][] | null;
+            observations?: components["schemas"]["ReachObservation"][] | null;
             thresholdsDefinedBy?: string | null;
         };
         ReachThreshold: {

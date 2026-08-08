@@ -280,6 +280,55 @@ export function ReachDetail({
           )}
         </dl>
 
+        {/*
+         * Ostala mjerenja na istoj stanici.
+         *
+         * Svako nosi **vlastito vrijeme**, i to nije sitnica: ista stanica zna imati svjež
+         * proticaj i nivo podzemne vode star četiri mjeseca (SOURCES.md §4.5). Jedna starost
+         * za cijelu stanicu bi četvoromjesečni podatak prikazala kao trenutno stanje.
+         */}
+        {reach.observations && reach.observations.length > 0 && (
+          <section className="mt-5" aria-label="Ostala mjerenja">
+            <h3 className="eyebrow mb-2.5">Ostala mjerenja</h3>
+
+            <dl className="grid grid-cols-2 gap-1.5">
+              {reach.observations.map((observation) => {
+                // Prag je isti kao za vodostaj: preko tri očekivana ciklusa je zastarjelo.
+                // Ovdje je ciklus sat, pa je granica tri sata.
+                const hours = Math.round((observation.ageMinutes ?? 0) / 60)
+                const old = hours >= 3
+
+                return (
+                  <div
+                    key={`${observation.parameter}-${observation.label}`}
+                    className={`rounded-card border px-3 py-2.5 ${
+                      old
+                        ? 'border-warn-border bg-warn-surface'
+                        : 'border-line bg-ink-900'
+                    }`}
+                  >
+                    <dt className="eyebrow">{observation.label}</dt>
+                    <dd className="numeric mt-1 text-lg leading-none font-semibold">
+                      {observation.value}
+                      <span className="font-sans text-xs font-normal text-fg-muted">
+                        {' '}
+                        {observation.unit}
+                      </span>
+                    </dd>
+                    <p
+                      className={`mt-1 text-[11px] leading-tight ${
+                        old ? 'text-warn-text' : 'text-fg-muted'
+                      }`}
+                    >
+                      {formatMeasuredAt(observation.measuredAt) ?? 'bez vremena'}
+                    </p>
+                  </div>
+                )
+              })}
+            </dl>
+          </section>
+        )}
+
         <ThresholdScale reach={reach} />
 
         {reach.sourceId && reach.stationKey && (

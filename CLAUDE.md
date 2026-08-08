@@ -2,10 +2,15 @@
 
 Jedna mapa sa stanjem svih rijeka u BiH, u realnom vremenu, besplatno. Danas su podaci razbijeni na četiri agencije i tri sajta; korisnik ne treba znati ništa o slivovima ni entitetima.
 
-**Trenutno stanje: `FAZA 4 — tri izvora rade; ostaje RHMZ RS i Brčko.`**
-91 test u .NET-u, 69 u web-u. AVP Sava (45 dionica, **sa** ocjenom), AVPJM (20 stanica) i
-FHMZBIH (12 stanica, **objavljuje trend**) rade kao zasebni pipelinei sa zasebnim legendama.
-Nijedna od te dvije zadnje agencije ne objavljuje stupanj opasnosti javnosti.
+**Trenutno stanje: `FAZA 4 — četiri izvora rade; ostaje RHMZ RS i Brčko.`**
+103 testa u .NET-u, 9 u Data, 69 u web-u. Zasebni pipelinei sa zasebnim legendama:
+AVP Sava ArcGIS (45 dionica, **jedini sa ocjenom opasnosti**), AVPJM (20 stanica),
+FHMZBIH (12 stanica, **objavljuje trend**) i **AVP Sava WISKI (150 stanica, 97 sa
+vodostajem)** — jedini izvor sa **više parametara po stanici**: proticaj, temperatura vode,
+padavine, temperatura zraka, podzemne vode (SOURCES.md §4.5).
+Tri od četiri izvora ne objavljuju stupanj opasnosti javnosti.
+Svako mjerenje nosi **vlastito vrijeme**; jedna stanica zna imati svjež vodostaj i podzemnu
+vodu staru 71 dan.
 Rute su `/dionica/{izvor}/{ključ}` jer ključ nije globalan.
 Ažuriraj ovu liniju pri svakom prelasku faze. Ako opis ispod ne odgovara stvarnom kodu — stvarnost pobjeđuje, popravi fajl u istom commitu.
 
@@ -73,6 +78,8 @@ Ne uvodi nove biblioteke bez pitanja. Obrazloži zašto prije nego dodaš.
 src/Vodostaji.Api      endpointi, DI
 src/Vodostaji.Core     domenski modeli, IStationDataSource
 src/Vodostaji.Ingest   adapteri po izvoru — srce projekta
+tools/probe-catalog.py obilazak ArcGIS kataloga; napravljen jer je pretraga
+                       jednog sloja dala pogrešan zaključak o temperaturi
 src/Vodostaji.Data     EF Core, migracije
 src/Vodostaji.Web      React
 tools/Probe            verifikacija izvora

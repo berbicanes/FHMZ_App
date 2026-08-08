@@ -94,7 +94,7 @@ function basemapStyle(): StyleSpecification {
 }
 
 /** Tačkasti izvori. Svaki dobija svoj sloj — nikad zajednički. */
-export const POINT_SOURCES = ['avpjm', 'fhmzbih'] as const
+export const POINT_SOURCES = ['avpjm', 'fhmzbih', 'avp-sava-wiski'] as const
 export type PointSourceId = (typeof POINT_SOURCES)[number]
 
 interface Props {
@@ -780,6 +780,9 @@ function buildLayers(instance: MapLibreMap) {
   const ring: Record<PointSourceId, { stroke: string; width: number; radius: number }> = {
     avpjm: { stroke: '#0b1018', width: 1.5, radius: 0 },
     fhmzbih: { stroke: '#ffffff', width: 2.5, radius: 1 },
+    // Treći izvor traži treću razliku koja preživi crno-bijeli ekran: deblji tamni prsten
+    // i veći poluprečnik. Ovo je i najbrojniji sloj (150 stanica), pa je red da se vidi.
+    'avp-sava-wiski': { stroke: '#0b1018', width: 2.5, radius: 0.5 },
   }
 
   for (const id of POINT_SOURCES) {

@@ -110,6 +110,15 @@ public static class PointSourceGeoJson
             Name = reading.Station.Name,
             River = reading.Station.River,
             GaugeZeroMetres = reading.Station.GaugeZero,
+            Observations = reading.Observations.Count == 0
+                ? null
+                : [.. reading.Observations.Select(o => new ReachObservation(
+                    o.Parameter.ToString(),
+                    o.ParameterLabelOriginal,
+                    o.Value,
+                    o.Unit,
+                    o.MeasuredAt,
+                    (long)Math.Round(o.AgeAt(now).TotalMinutes)))],
 
             Level = reading.Level.ToString(),
             LevelLabel = legend.Label(reading),

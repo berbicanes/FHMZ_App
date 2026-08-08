@@ -342,6 +342,36 @@
         },
         "additionalProperties": false
       },
+      "ReachObservation": {
+        "type": "object",
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "value": {
+            "type": "number",
+            "format": "double"
+          },
+          "unit": {
+            "type": "string",
+            "nullable": true
+          },
+          "measuredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ageMinutes": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
       "ReachProperties": {
         "required": [
           "agencyName",
@@ -480,6 +510,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ReachThreshold"
+            },
+            "nullable": true
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReachObservation"
             },
             "nullable": true
           },
