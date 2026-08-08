@@ -128,3 +128,35 @@ Provjera koja hvata povratak greške:
 grep -rn "\[--color-\|\[--radius-" src --include="*.tsx"   # mora biti prazno
 grep -o "background-color:--" dist/assets/*.css            # mora biti prazno
 ```
+
+---
+
+## 9. Svijetla tema, samo BiH, i telefon
+
+**Tema je svijetla.** Tokeni su ostali pod imenima `ink-*` iako više ne opisuju tamnu
+skalu — opisuju dubinu, a dubina i dalje raste od podloge stranice prema pločama.
+Preimenovanje bi bilo stotinu izmjena bez ijedne nove informacije.
+
+**Obrisi su crni** (`--color-line-strong: #0b1018`). Zbog toga se boja statusa preselila iz
+ivice u ispunu dionice, a ispuna je podignuta sa 0.16 na 0.32 — ista providnost na bijelom
+izgleda upola slabija nego na crnom. Ispuna i dalje **nije puna**: poligon prosječne
+površine 339 km² obojen do kraja čita se kao „sve ovo je pod vodom", a znači „rijeka je na
+jednom mjerilu prešla prag".
+
+**Upozorenje i greška su tokeni** (`--color-warn-*`, `--color-danger-*`), ne heksovi po
+komponentama. Pri prelasku teme je svaki upisani heks morao biti nađen ručno, a propušteni
+ostane tamna mrlja usred bijele ploče — i to baš na poruci upozorenja.
+
+**Mapa pokriva samo BiH.** Poligon preko cijelog svijeta sa granicom države kao rupom
+(`/geo/bih.json`, 13 kB, uz aplikaciju a ne sa tuđeg servera). Sloj stoji iznad imena sa
+podloge, pa gasi i teren i natpise izvan granice odjednom. Bez maske su susjedne države
+jednako naglašene kao BiH, pa se ne vidi dokle pokrivenost uopšte seže.
+
+**Na telefonu je donja ploča, ne podijeljen ekran.** Ekran napola daje dvije neupotrebljive
+polovine: mapu presitnu da se prstom išta pogodi, i listu u koju stanu tri reda. Ploča ima
+tri položaja — `peek` (sažetak), `half` (lista), `full` (detalj) — i otvara se do kraja kad
+se otvori detalj. Prekidači mape se sa mape sele u ploču, jer bi ih inače prekrila.
+
+**Odskakanje preko kraja je ugašeno.** `overscroll-behavior: none` na dokumentu i `contain`
+na kontejnerima koji skroluju. Bez toga skrol preko dna liste povuče cijeli dokument i
+ispod se ukaže gola pozadina.

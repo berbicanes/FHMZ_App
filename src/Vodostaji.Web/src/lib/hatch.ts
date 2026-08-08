@@ -21,7 +21,7 @@ export function createHatchPattern(size = 12): ImageData {
   context.fillStyle = '#cccccc'
   context.fillRect(0, 0, size, size)
 
-  context.strokeStyle = '#5c6470'
+  context.strokeStyle = '#8a97a8'
   context.lineWidth = 2.5
   context.lineCap = 'square'
 

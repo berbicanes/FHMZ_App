@@ -37,14 +37,14 @@ export function DisclaimerBar() {
     <div
       role="region"
       aria-label="Važno upozorenje"
-      className="relative z-30 flex items-start gap-3 border-b border-[#6b4c14] bg-[#241b06] px-4 py-2.5 text-sm"
+      className="relative z-30 flex items-start gap-3 border-b border-warn-border bg-warn-surface px-4 py-2.5 text-sm"
     >
       <svg
         width="16"
         height="16"
         viewBox="0 0 16 16"
         aria-hidden="true"
-        className="mt-0.5 shrink-0 text-[#ffd98a]"
+        className="mt-0.5 shrink-0 text-warn-text"
       >
         <path
           d="M8 1.5l6.5 12h-13L8 1.5z"
@@ -57,12 +57,12 @@ export function DisclaimerBar() {
         <circle cx="8" cy="11.6" r="0.8" fill="currentColor" />
       </svg>
 
-      <p className="flex-1 leading-relaxed text-[#ffd98a]">{DISCLAIMER}</p>
+      <p className="flex-1 leading-relaxed text-warn-text">{DISCLAIMER}</p>
 
       <button
         type="button"
         onClick={dismiss}
-        className="shrink-0 rounded-chip border border-[#7a5a1a] px-3 py-1 text-xs text-[#ffd98a] hover:bg-[#33270a]"
+        className="shrink-0 rounded-chip border border-warn-border px-3 py-1 text-xs text-warn-text hover:bg-warn-border/25"
       >
         Razumijem
       </button>

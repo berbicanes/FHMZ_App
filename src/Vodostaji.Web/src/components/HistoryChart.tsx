@@ -153,8 +153,8 @@ export function HistoryChart({
               <AreaChart data={points} margin={{ top: 10, right: 16, bottom: 0, left: -8 }}>
                 <defs>
                   <linearGradient id="waterFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#7fb4e8" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#7fb4e8" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#2f6fb0" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#2f6fb0" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
 
@@ -178,13 +178,13 @@ export function HistoryChart({
                   <ReferenceLine
                     key={threshold.label}
                     y={threshold.valueCm}
-                    stroke="#4a5462"
+                    stroke="#b8c2d0"
                     strokeDasharray="3 4"
                     strokeWidth={1}
                   />
                 ))}
 
-                <CartesianGrid stroke="#232936" strokeDasharray="2 5" vertical={false} />
+                <CartesianGrid stroke="#e2e8f1" strokeDasharray="2 5" vertical={false} />
 
                 <XAxis
                   dataKey="t"
@@ -198,33 +198,33 @@ export function HistoryChart({
                       month: 'numeric',
                     })
                   }
-                  stroke="#4a5462"
-                  tick={{ fill: '#7c8798', fontSize: 11 }}
+                  stroke="#b8c2d0"
+                  tick={{ fill: '#667487', fontSize: 11 }}
                   tickLine={false}
-                  axisLine={{ stroke: '#232936' }}
+                  axisLine={{ stroke: '#e2e8f1' }}
                 />
 
                 <YAxis
                   domain={[domain.min, domain.max]}
                   width={52}
-                  stroke="#4a5462"
-                  tick={{ fill: '#7c8798', fontSize: 11 }}
+                  stroke="#b8c2d0"
+                  tick={{ fill: '#667487', fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value: number) => `${Math.round(value)}`}
                 />
 
                 <Tooltip
-                  cursor={{ stroke: '#616b78', strokeWidth: 1 }}
+                  cursor={{ stroke: '#0b1018', strokeWidth: 1 }}
                   contentStyle={{
-                    background: '#12161d',
-                    border: '1px solid #2a313d',
+                    background: '#ffffff',
+                    border: '1px solid #d4dce7',
                     borderRadius: 10,
                     fontSize: 12,
                     boxShadow: '0 12px 32px -12px rgb(0 0 0 / 0.7)',
                   }}
-                  labelStyle={{ color: '#7c8798', marginBottom: 2 }}
-                  itemStyle={{ color: '#e9eef5' }}
+                  labelStyle={{ color: '#667487', marginBottom: 2 }}
+                  itemStyle={{ color: '#0b1018' }}
                   labelFormatter={(value: number) =>
                     new Date(value).toLocaleString('bs-BA', {
                       day: 'numeric',
@@ -239,20 +239,20 @@ export function HistoryChart({
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="#8ec5ff"
+                  stroke="#2f6fb0"
                   strokeWidth={1.8}
                   fill="url(#waterFill)"
                   isAnimationActive={false}
                   connectNulls={false}
-                  dot={points.length <= 12 ? { r: 2.5, fill: '#8ec5ff', strokeWidth: 0 } : false}
-                  activeDot={{ r: 4, fill: '#e9eef5', strokeWidth: 0 }}
+                  dot={points.length <= 12 ? { r: 2.5, fill: '#2f6fb0', strokeWidth: 0 } : false}
+                  activeDot={{ r: 4, fill: '#0b1018', strokeWidth: 0 }}
                 />
 
                 {/* Zadnje očitanje — jedina tačka koja uvijek ima oznaku. */}
                 {last && (
                   <ReferenceLine
                     x={last.t}
-                    stroke="#e9eef5"
+                    stroke="#0b1018"
                     strokeWidth={1}
                     strokeOpacity={0.35}
                   />

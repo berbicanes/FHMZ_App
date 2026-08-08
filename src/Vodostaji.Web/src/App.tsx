@@ -19,6 +19,7 @@ import { StationDetail } from './components/StationDetail'
 import { StatusFilter } from './components/StatusFilter'
 import { formatMeasuredAt } from './lib/freshness'
 import { bucketOf, summarizeBuckets, type BucketKey } from './lib/levels'
+import { useIsCompact, useSheet, type Snap } from './lib/sheet'
 import { useRoute } from './lib/router'
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -47,6 +48,11 @@ export default function App() {
   const [buckets, setBuckets] = useState<BucketKey[] | null>(null)
   // Mapa koja zakaže mora to reći. Prazna mapa bez poruke izgleda kao mapa bez opasnosti.
   const [mapError, setMapError] = useState<string | null>(null)
+
+  // Na telefonu je ploča preko mape; na širokom ekranu je bočna kolona i `snap` se ignoriše.
+  const compact = useIsCompact()
+  const [snap, setSnap] = useState<Snap>('peek')
+  const sheet = useSheet(compact, snap, setSnap)
 
   // TanStack Query, nikad useEffect (CLAUDE.md → Konvencije).
   const reaches = useQuery({
@@ -132,6 +138,14 @@ export default function App() {
     document.title = name ? `${name} — Vodostaji BiH` : 'Vodostaji BiH'
   }, [selectedReach, selectedStation])
 
+  // Otvoren detalj na telefonu traži cijeli ekran; zatvoren vraća listu, ne skroz dolje —
+  // spuštanje do `peek` bi izgledalo kao da je i lista nestala zajedno sa detaljem.
+  const hasDetail = route.kind === 'reach' || route.kind === 'station'
+  useEffect(() => {
+    if (!compact) return
+    setSnap(hasDetail ? 'full' : 'half')
+  }, [compact, hasDetail])
+
   const meta = reaches.data?.meta
   const totalMeasured = useMemo(
     () => allReaches.filter((r) => r.valueCm !== null && r.valueCm !== undefined).length,
@@ -161,13 +175,44 @@ export default function App() {
 
   const detail = selectedReach ?? selectedStation
 
+  // Isti prekidači stoje na dva mjesta ovisno o širini ekrana, pa se pišu jednom.
+  const mapToggles = (
+    <>
+      <label className="flex cursor-pointer items-center gap-2.5">
+        <input
+          type="checkbox"
+          checked={showStations || route.kind === 'station'}
+          onChange={(event) => setShowStations(event.target.checked)}
+          className="accent-fg-soft"
+        />
+        <span>Mjerna mjesta</span>
+        {stations.data && (
+          <span className="tabular text-xs text-fg-muted">
+            {stations.data.features.length}
+          </span>
+        )}
+      </label>
+
+      <label className="flex cursor-pointer items-center gap-2.5">
+        <input
+          type="checkbox"
+          checked={showLabels}
+          onChange={(event) => setShowLabels(event.target.checked)}
+          className="accent-fg-soft"
+        />
+        <span>Imena i vrijednosti na mapi</span>
+      </label>
+    </>
+  )
+
   return (
     <div className="flex h-full flex-col bg-ink-950">
       <DisclaimerBar />
 
       <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
         {/* Mapa je podloga cijelog ekrana; ploče plutaju nad njom. */}
-        <main className="relative min-h-[45vh] flex-1 lg:min-h-0">
+        {/* Na telefonu mapa zauzima cijeli ekran, a ploča pluta nad njom. */}
+        <main className="absolute inset-0 lg:relative lg:inset-auto lg:min-h-0 lg:flex-1">
           <ReachMap
             data={reaches.data}
             points={points}
@@ -206,33 +251,9 @@ export default function App() {
             </button>
           </header>
 
-          {/* Prekidači mape na jednom mjestu, u donjem lijevom uglu — dalje od kontrola
-              zuma desno, i dalje od trake sa atribucijom. */}
-          <div className="panel absolute bottom-3 left-3 z-10 space-y-1.5 px-3.5 py-2.5 text-sm">
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <input
-                type="checkbox"
-                checked={showStations || route.kind === 'station'}
-                onChange={(event) => setShowStations(event.target.checked)}
-                className="accent-fg-soft"
-              />
-              <span>Mjerna mjesta</span>
-              {stations.data && (
-                <span className="tabular text-xs text-fg-muted">
-                  {stations.data.features.length}
-                </span>
-              )}
-            </label>
-
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <input
-                type="checkbox"
-                checked={showLabels}
-                onChange={(event) => setShowLabels(event.target.checked)}
-                className="accent-fg-soft"
-              />
-              <span>Imena i vrijednosti</span>
-            </label>
+          {/* Prekidači mape. Na telefonu bi ih donja ploča prekrila, pa se tamo sele u nju. */}
+          <div className="panel absolute bottom-3 left-3 z-10 hidden space-y-1.5 px-3.5 py-2.5 text-sm lg:block">
+            {mapToggles}
           </div>
 
           {reaches.isPending && (
@@ -243,12 +264,12 @@ export default function App() {
 
           {reaches.isError && (
             /* Greška kaže šta se desilo i ne izvinjava se (UI.md §7). */
-            <div className="absolute inset-x-3 top-20 z-10 rounded-panel border border-[#7a2020] bg-[#2a1010] p-3 text-sm">
+            <div className="absolute inset-x-3 top-20 z-10 rounded-panel border border-danger-border bg-danger-surface p-3 text-sm">
               <p>Stanje rijeka se ne može učitati. {(reaches.error as Error).message}</p>
               <button
                 type="button"
                 onClick={() => reaches.refetch()}
-                className="mt-2 rounded-chip border border-[#7a2020] px-3 py-1 text-xs"
+                className="mt-2 rounded-chip border border-danger-border px-3 py-1 text-xs"
               >
                 Pokušaj ponovo
               </button>
@@ -256,15 +277,15 @@ export default function App() {
           )}
 
           {mapError && (
-            <div className="absolute inset-x-3 bottom-24 z-10 rounded-panel border border-[#7a2020] bg-[#2a1010] p-3 text-sm">
+            <div className="absolute inset-x-3 bottom-24 z-10 rounded-panel border border-danger-border bg-danger-surface p-3 text-sm">
               <p>
-                Mapa se ne prikazuje ispravno: {mapError} Podaci su i dalje tačni u listi sa
-                strane.
+                Mapa se ne prikazuje ispravno: {mapError} Podaci su i dalje tačni u listi
+                ispod.
               </p>
               <button
                 type="button"
                 onClick={() => setMapError(null)}
-                className="mt-2 rounded-chip border border-[#7a2020] px-3 py-1 text-xs"
+                className="mt-2 rounded-chip border border-danger-border px-3 py-1 text-xs"
               >
                 Sakrij
               </button>
@@ -272,7 +293,38 @@ export default function App() {
           )}
         </main>
 
-        <aside className="relative flex min-h-0 flex-1 flex-col border-t border-line bg-ink-900 lg:h-full lg:w-[30rem] lg:flex-none lg:border-t-0 lg:border-l xl:w-[34rem]">
+        <aside
+          className={`sheet absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-panel border-t border-line bg-ink-900 lg:relative lg:inset-auto lg:z-auto lg:h-full lg:w-[30rem] lg:flex-none lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-none xl:w-[34rem] ${
+            sheet.dragging ? 'sheet-dragging' : ''
+          }`}
+          style={sheet.height !== null ? { height: sheet.height } : undefined}
+        >
+          {compact && (
+            /* Hvatište. Povlačenje mijenja položaj, dodir ga pomjera za jedan — na telefonu
+               se puno češće kucne nego povuče. */
+            <div
+              {...sheet.gripProps}
+              role="button"
+              tabIndex={0}
+              aria-label={`Ploča sa podacima, položaj: ${snap}`}
+              onClick={() => setSnap(snap === 'full' ? 'peek' : snap === 'half' ? 'full' : 'half')}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowUp') setSnap(snap === 'peek' ? 'half' : 'full')
+                if (event.key === 'ArrowDown') setSnap(snap === 'full' ? 'half' : 'peek')
+              }}
+              className="sheet-grip shrink-0 cursor-grab px-4 pt-2.5 pb-2.5 active:cursor-grabbing"
+            >
+              <div className="mt-2.5 flex items-baseline justify-between gap-3">
+                <span className="text-sm font-semibold">
+                  {hasDetail ? (selectedReach?.name ?? selectedStation?.name) : 'Stanje rijeka'}
+                </span>
+                <span className="tabular text-xs text-fg-muted">
+                  {totalMeasured > 0 ? `${totalMeasured} mjerenja` : 'učitavanje…'}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="scroll-soft flex-1 overflow-y-auto">
             <div className="sticky top-0 z-10 border-b border-line bg-ink-900/95 p-4 backdrop-blur">
               <Search
@@ -284,6 +336,10 @@ export default function App() {
                   navigate({ kind: 'station', sourceId, key })
                 }}
               />
+            </div>
+
+            <div className="space-y-1.5 border-b border-line px-4 py-3 text-sm lg:hidden">
+              {mapToggles}
             </div>
 
             <div className="border-b border-line">

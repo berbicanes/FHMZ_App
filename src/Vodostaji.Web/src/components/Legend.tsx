@@ -13,7 +13,7 @@ const SAVA_ENTRIES = [
 ] as const
 
 const HATCH =
-  'repeating-linear-gradient(45deg, #5c6470 0 2px, transparent 2px 5px)'
+  'repeating-linear-gradient(45deg, #8a97a8 0 2px, transparent 2px 5px)'
 
 function Swatch({
   color,
@@ -33,7 +33,7 @@ function Swatch({
       style={{
         backgroundColor: color,
         backgroundImage: hatched ? HATCH : undefined,
-        border: ring ? '2px solid #e9eef5' : '1px solid rgb(0 0 0 / 0.45)',
+        border: ring ? '2px solid #0b1018' : '1px solid rgb(0 0 0 / 0.45)',
       }}
     />
   )

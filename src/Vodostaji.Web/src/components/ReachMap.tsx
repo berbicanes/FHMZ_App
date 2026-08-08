@@ -46,7 +46,7 @@ const MAX_BOUNDS: [[number, number], [number, number]] = [
  * Bihaća, pa su imena mjesta nestajala tačno tamo gdje su najpotrebnija: ispod obojene
  * dionice. Na 55% je uz to sve izgledalo isprano.
  *
- * Sada je podloga razdvojena na `dark_nolabels` (teren, ispod svega) i `dark_only_labels`
+ * Sada je podloga razdvojena na `light_nolabels` (teren, ispod svega) i `light_only_labels`
  * (samo imena, iznad naših površina a ispod naših tačaka). To je standardni kartografski
  * sendvič: teren → podaci → imena. Raster je uz to prigušen kroz `saturation`/`brightness`
  * umjesto kroz providnost, pa ostaje oštar a ne siv.
@@ -63,29 +63,30 @@ function basemapStyle(): StyleSpecification {
     sources: {
       'carto-base': {
         type: 'raster',
-        tiles: [`https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}${suffix}.png`],
+        tiles: [`https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}${suffix}.png`],
         tileSize: 256,
         attribution: '© OpenStreetMap, © CARTO',
       },
       'carto-labels': {
         type: 'raster',
-        tiles: [`https://basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}${suffix}.png`],
+        tiles: [`https://basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}${suffix}.png`],
         tileSize: 256,
       },
     },
     layers: [
-      { id: 'background', type: 'background', paint: { 'background-color': '#05070b' } },
+      { id: 'background', type: 'background', paint: { 'background-color': '#dbe2ec' } },
       {
         id: 'carto-base',
         type: 'raster',
         source: 'carto-base',
         paint: {
-          'raster-opacity': 0.92,
-          // Prigušenje ide kroz zasićenje i svjetlinu, ne kroz providnost — tako podloga
-          // ostaje oštra, a boje statusa i dalje najsvjetlije na ekranu (UI.md §6).
-          'raster-saturation': -0.3,
-          'raster-contrast': 0.08,
-          'raster-brightness-max': 0.78,
+          'raster-opacity': 0.95,
+          // Prigušenje ide kroz zasićenje, ne kroz providnost — podloga ostaje oštra, a
+          // boje statusa i dalje najjače na ekranu (UI.md §6). Na svijetloj temi se ne
+          // spušta svjetlina nego se diže donji prag, da podloga uzmakne u bjelinu.
+          'raster-saturation': -0.35,
+          'raster-contrast': -0.05,
+          'raster-brightness-min': 0.16,
         },
       },
     ],
@@ -270,6 +271,29 @@ export function ReachMap({
     ;(map.current?.getSource('reaches') as GeoJSONSource | undefined)?.setData(data)
   }, [layersReady, data])
 
+  // Granica države je statički fajl uz aplikaciju (13 kB), ne poziv nekom servisu — mapa
+  // se ne smije oslanjati na tuđi server da bi znala gdje je BiH.
+  useEffect(() => {
+    if (!layersReady) return
+    let cancelled = false
+
+    fetch('/geo/bih.json')
+      .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
+      .then((feature) => {
+        if (cancelled) return
+        const source = map.current?.getSource('bih') as GeoJSONSource | undefined
+        source?.setData(maskFrom(feature))
+      })
+      .catch(() => {
+        // Bez maske mapa i dalje radi i svi podaci su tačni — vidi se i okolina. To je
+        // kozmetički gubitak i ne zaslužuje poruku o grešci preko ekrana.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [layersReady])
+
   useEffect(() => {
     if (!layersReady) return
 
@@ -396,7 +420,33 @@ const pointLayerId = (id: PointSourceId) => `points-${id}-circles`
 const pointLabelId = (id: PointSourceId) => `points-${id}-labels`
 const selectedPointLayerId = (id: PointSourceId) => `points-${id}-selected`
 
-const NOTHING: FilterSpecification = ['==', ['get', 'stationKey'], ' nema']
+const NOTHING: FilterSpecification = ['==', ['get', 'stationKey'], '__nikad__']
+
+/**
+ * Vanjski prsten maske — cijeli svijet. Web Mercator staje na ±85.05°, pa ide 85.
+ * Unutrašnji prstenovi su granica BiH i u poligonu se ponašaju kao rupe.
+ */
+const WORLD_RING: [number, number][] = [
+  [-180, -85],
+  [180, -85],
+  [180, 85],
+  [-180, 85],
+  [-180, -85],
+]
+
+/** Poligon „svijet minus BiH" iz granice učitane sa `/geo/bih.json`. */
+function maskFrom(feature: { geometry: { type: string; coordinates: unknown } }): GeoJSON.Feature {
+  const holes: number[][][] =
+    feature.geometry.type === 'MultiPolygon'
+      ? (feature.geometry.coordinates as number[][][][]).map((polygon) => polygon[0])
+      : (feature.geometry.coordinates as number[][][])
+
+  return {
+    type: 'Feature',
+    properties: {},
+    geometry: { type: 'Polygon', coordinates: [WORLD_RING, ...holes] },
+  }
+}
 
 const HAS_LEVEL: ExpressionSpecification = ['!=', ['get', 'level'], 'Unknown']
 const NO_LEVEL: ExpressionSpecification = ['==', ['get', 'level'], 'Unknown']
@@ -556,11 +606,14 @@ function buildLayers(instance: MapLibreMap) {
     paint: {
       'fill-color': ['get', 'color'],
       // Stariji podatak je vidljivo bljeđi (UI.md §2).
+      // Na bijeloj podlozi ista providnost izgleda upola slabije nego na crnoj, pa su
+      // vrijednosti podignute. Ostaju providne: puna ispuna preko 769 km² i dalje bi se
+      // čitala kao "sve ovo je pod vodom", a znači "rijeka je na jednom mjerilu prešla prag".
       'fill-opacity': [
         'case',
-        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.07,
-        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.11,
-        0.16,
+        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.14,
+        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.22,
+        0.32,
       ],
     },
   })
@@ -597,8 +650,8 @@ function buildLayers(instance: MapLibreMap) {
     filter: HAS_LEVEL,
     paint: {
       'line-color': ['get', 'color'],
-      'line-width': ['interpolate', ['linear'], ['zoom'], 6, 6, 11, 14],
-      'line-blur': ['interpolate', ['linear'], ['zoom'], 6, 4, 11, 10],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 6, 5, 11, 12],
+      'line-blur': ['interpolate', ['linear'], ['zoom'], 6, 3, 11, 8],
       'line-opacity': [
         'case',
         ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.1,
@@ -615,13 +668,15 @@ function buildLayers(instance: MapLibreMap) {
     source: 'reaches',
     filter: HAS_LEVEL,
     paint: {
-      'line-color': ['get', 'color'],
+      // Crn obris, po odluci iz razgovora. Boja statusa se seli u ispunu (podignutu iznad)
+      // i u tačku uz ime — crna daje oblik, boja daje stanje.
+      'line-color': '#0b1018',
       'line-width': ['interpolate', ['linear'], ['zoom'], 6, 1.5, 11, 3.2],
       'line-opacity': [
         'case',
-        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.5,
-        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.75,
-        0.95,
+        ['>', ['coalesce', ['get', 'ageRatio'], 0], 3], 0.35,
+        ['>=', ['coalesce', ['get', 'ageRatio'], 0], 1], 0.55,
+        0.8,
       ],
     },
   })
@@ -634,9 +689,9 @@ function buildLayers(instance: MapLibreMap) {
     source: 'reaches',
     filter: ['>', ['coalesce', ['get', 'ageRatio'], 0], 3],
     paint: {
-      'line-color': '#e6edf3',
+      'line-color': '#0b1018',
       'line-width': 1.4,
-      'line-opacity': 0.75,
+      'line-opacity': 0.6,
       'line-dasharray': [2, 2],
     },
   })
@@ -648,10 +703,10 @@ function buildLayers(instance: MapLibreMap) {
     source: 'reaches',
     filter: NOTHING,
     paint: {
-      'line-color': '#ffffff',
+      'line-color': '#0b1018',
       'line-width': ['interpolate', ['linear'], ['zoom'], 6, 10, 11, 22],
       'line-blur': 8,
-      'line-opacity': 0.22,
+      'line-opacity': 0.18,
     },
   })
 
@@ -661,9 +716,9 @@ function buildLayers(instance: MapLibreMap) {
     source: 'reaches',
     filter: NOTHING,
     paint: {
-      'line-color': '#ffffff',
-      'line-width': ['interpolate', ['linear'], ['zoom'], 6, 2.4, 11, 4],
-      'line-opacity': 0.95,
+      'line-color': '#0b1018',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 6, 2.6, 11, 4.5],
+      'line-opacity': 1,
     },
   })
 
@@ -678,7 +733,40 @@ function buildLayers(instance: MapLibreMap) {
     id: 'carto-labels',
     type: 'raster',
     source: 'carto-labels',
-    paint: { 'raster-opacity': 0.75 },
+    paint: { 'raster-opacity': 0.9 },
+  })
+
+  /*
+   * Sve izvan BiH se prekriva.
+   *
+   * Ovo je mapa jedne države, a ne isječak svijeta zumiran na nju. Bez maske su Hrvatska i
+   * Srbija jednako naglašene kao BiH, pa oko troši vrijeme na razlučivanje gdje prestaje
+   * ono što aplikacija uopšte pokriva. Sa maskom je granica pokrivenosti vidljiva odmah.
+   *
+   * Tehnika je poligon preko cijelog svijeta sa BiH kao rupom. Sloj stoji **iznad** imena
+   * sa podloge, pa gasi i teren i natpise izvan granice jednim potezom.
+   */
+  instance.addSource('bih', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  })
+
+  instance.addLayer({
+    id: 'bih-mask',
+    type: 'fill',
+    source: 'bih',
+    paint: { 'fill-color': '#dbe2ec', 'fill-opacity': 0.94 },
+  })
+
+  instance.addLayer({
+    id: 'bih-border',
+    type: 'line',
+    source: 'bih',
+    paint: {
+      'line-color': '#0b1018',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 6, 1.2, 10, 2],
+      'line-opacity': 0.55,
+    },
   })
 
   // Tačkasti izvori — **jedan sloj po agenciji**, nikad zajednički i nikad stopljen sa
@@ -690,8 +778,8 @@ function buildLayers(instance: MapLibreMap) {
   // jedna agencija ima puni krug sa tamnom ivicom, druga krug sa **svijetlim prstenom**:
   // razlika koja preživi i crno-bijeli ekran.
   const ring: Record<PointSourceId, { stroke: string; width: number; radius: number }> = {
-    avpjm: { stroke: '#05070b', width: 1.5, radius: 0 },
-    fhmzbih: { stroke: '#e6edf3', width: 2.5, radius: 1 },
+    avpjm: { stroke: '#0b1018', width: 1.5, radius: 0 },
+    fhmzbih: { stroke: '#ffffff', width: 2.5, radius: 1 },
   }
 
   for (const id of POINT_SOURCES) {
@@ -712,9 +800,9 @@ function buildLayers(instance: MapLibreMap) {
           6, 7 + ring[id].radius,
           11, 13 + ring[id].radius,
         ],
-        'circle-color': '#05070b',
-        'circle-opacity': 0.55,
-        'circle-blur': 0.6,
+        'circle-color': '#ffffff',
+        'circle-opacity': 0.9,
+        'circle-blur': 0.5,
       },
     })
 
@@ -750,9 +838,9 @@ function buildLayers(instance: MapLibreMap) {
       paint: {
         'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 10, 11, 16],
         'circle-color': 'rgba(0,0,0,0)',
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 2,
-        'circle-stroke-opacity': 0.9,
+        'circle-stroke-color': '#0b1018',
+        'circle-stroke-width': 2.5,
+        'circle-stroke-opacity': 1,
       },
     })
   }
@@ -775,10 +863,10 @@ function buildLayers(instance: MapLibreMap) {
     layout: { visibility: 'none' },
     paint: {
       'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 3, 11, 6],
-      'circle-color': 'rgba(0,0,0,0)',
-      'circle-stroke-color': '#e6edf3',
+      'circle-color': '#ffffff',
+      'circle-stroke-color': '#0b1018',
       'circle-stroke-width': 1.5,
-      'circle-stroke-opacity': 0.8,
+      'circle-stroke-opacity': 0.85,
     },
   })
 
@@ -799,8 +887,8 @@ function buildLayers(instance: MapLibreMap) {
       'symbol-sort-key': SEVERITY_SORT,
     },
     paint: {
-      'text-color': '#f2f6fb',
-      'text-halo-color': '#05070b',
+      'text-color': '#0b1018',
+      'text-halo-color': '#ffffff',
       'text-halo-width': 1.6,
       'text-halo-blur': 0.4,
     },
@@ -823,8 +911,8 @@ function buildLayers(instance: MapLibreMap) {
         'symbol-sort-key': SEVERITY_SORT,
       },
       paint: {
-        'text-color': '#f2f6fb',
-        'text-halo-color': '#05070b',
+        'text-color': '#0b1018',
+        'text-halo-color': '#ffffff',
         'text-halo-width': 1.6,
         'text-halo-blur': 0.4,
       },
@@ -846,8 +934,8 @@ function buildLayers(instance: MapLibreMap) {
       'text-padding': 4,
     },
     paint: {
-      'text-color': '#aeb7c4',
-      'text-halo-color': '#05070b',
+      'text-color': '#3a4657',
+      'text-halo-color': '#ffffff',
       'text-halo-width': 1.4,
     },
   })
@@ -872,8 +960,8 @@ function escapeHtml(value: unknown): string {
 function reachPopupHtml(reach: ReachProperties): string {
   const value =
     reach.valueCm === null || reach.valueCm === undefined
-      ? '<span style="color:#7c8798">nema podatka</span>'
-      : `<span style="font-weight:600">${escapeHtml(reach.valueCm)}</span> <span style="color:#7c8798">cm</span>`
+      ? '<span style="color:#667487">nema podatka</span>'
+      : `<span style="font-weight:600">${escapeHtml(reach.valueCm)}</span> <span style="color:#667487">cm</span>`
 
   const measured = reach.measuredAt
     ? new Date(reach.measuredAt).toLocaleString('bs-BA', {
@@ -885,11 +973,11 @@ function reachPopupHtml(reach: ReachProperties): string {
     : (reach.noDataReason ?? 'vrijeme mjerenja nije objavljeno')
 
   const river = reach.river
-    ? `<div style="color:#7c8798;font-size:11px">Rijeka ${escapeHtml(reach.river)}</div>`
+    ? `<div style="color:#667487;font-size:11px">Rijeka ${escapeHtml(reach.river)}</div>`
     : ''
 
   return `
-    <div class="panel" style="padding:10px 12px;font-size:12px;line-height:1.45;color:#e9eef5">
+    <div class="panel" style="padding:10px 12px;font-size:12px;line-height:1.45;color:#0b1018">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
         <span style="width:9px;height:9px;border-radius:999px;flex:none;background:${escapeHtml(
           reach.color ?? '#cccccc',
@@ -898,17 +986,17 @@ function reachPopupHtml(reach: ReachProperties): string {
       </div>
       ${river}
       <div style="margin-top:5px;font-size:15px">${value}</div>
-      <div style="color:#aeb7c4;margin-top:3px">${escapeHtml(reach.levelLabel)}</div>
-      <div style="color:#7c8798;margin-top:2px">${escapeHtml(measured)}</div>
-      <div style="color:#7c8798;margin-top:5px;font-size:11px">${escapeHtml(reach.agencyName)}</div>
+      <div style="color:#3a4657;margin-top:3px">${escapeHtml(reach.levelLabel)}</div>
+      <div style="color:#667487;margin-top:2px">${escapeHtml(measured)}</div>
+      <div style="color:#667487;margin-top:5px;font-size:11px">${escapeHtml(reach.agencyName)}</div>
     </div>`
 }
 
 function stationPopupHtml(station: StationProperties): string {
   return `
-    <div class="panel" style="padding:10px 12px;font-size:12px;line-height:1.45;color:#e9eef5">
+    <div class="panel" style="padding:10px 12px;font-size:12px;line-height:1.45;color:#0b1018">
       <div style="font-weight:600">${escapeHtml(station.name)}</div>
-      <div style="color:#7c8798;margin-top:2px">Mjerno mjesto — bez vodostaja</div>
-      <div style="color:#7c8798;margin-top:5px;font-size:11px">${escapeHtml(station.agencyName)}</div>
+      <div style="color:#667487;margin-top:2px">Mjerno mjesto — bez vodostaja</div>
+      <div style="color:#667487;margin-top:5px;font-size:11px">${escapeHtml(station.agencyName)}</div>
     </div>`
 }

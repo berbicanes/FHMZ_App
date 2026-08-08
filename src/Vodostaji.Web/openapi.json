@@ -504,6 +504,10 @@
           "level": {
             "type": "string",
             "nullable": true
+          },
+          "labelOriginal": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

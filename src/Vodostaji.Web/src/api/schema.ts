@@ -222,6 +222,7 @@ export interface components {
             /** Format: double */
             valueCm?: number;
             level?: string | null;
+            labelOriginal?: string | null;
         };
         SourceStatus: {
             sourceId: string | null;

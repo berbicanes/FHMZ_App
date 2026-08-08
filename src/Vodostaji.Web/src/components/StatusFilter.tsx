@@ -72,7 +72,7 @@ export function StatusFilter({
                   // boja nigdje nije jedini nosilac (UI.md §5).
                   backgroundImage:
                     bucket.key === 'NoData'
-                      ? 'repeating-linear-gradient(45deg, #5c6470 0 2px, transparent 2px 5px)'
+                      ? 'repeating-linear-gradient(45deg, #8a97a8 0 2px, transparent 2px 5px)'
                       : undefined,
                 }}
               />

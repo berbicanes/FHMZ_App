@@ -156,7 +156,7 @@ export function ReachDetail({
 
         {/* Podatak koji je zastario mora to reći iznad svega ostalog, a ne u fusnoti. */}
         {stale && (
-          <p className="mt-3 rounded-card border border-[#7a5a1a] bg-[#241b06] px-3 py-2 text-xs leading-relaxed text-[#ffd98a]">
+          <p className="mt-3 rounded-card border border-warn-border bg-warn-surface px-3 py-2 text-xs leading-relaxed text-warn-text">
             Ovo očitanje je starije od tri očekivana ciklusa ove stanice. Prikazano je onako
             kako je objavljeno, ali vjerovatno ne opisuje trenutno stanje.
           </p>
@@ -208,7 +208,7 @@ export function ReachDetail({
         {/* Činjenica, ne sud. Ne tvrdimo da je očitanje pogrešno — kažemo da je promjena veća
             od cijelog raspona pragova koje je odredila agencija, i upućujemo na nju. */}
         {unusual && (
-          <p className="mt-4 rounded-card border border-[#7a5a1a] bg-[#241b06] px-3 py-2.5 text-xs leading-relaxed text-[#ffd98a]">
+          <p className="mt-4 rounded-card border border-warn-border bg-warn-surface px-3 py-2.5 text-xs leading-relaxed text-warn-text">
             Promjena od {signedCm(unusual.changeCm)} cm veća je od cijelog raspona pragova ove
             dionice ({unusual.lowestCm}–{unusual.highestCm} cm). Vrijednost je prikazana onako
             kako ju je objavio {reach.agencyName}; prije oslanjanja provjeri kod njih.
