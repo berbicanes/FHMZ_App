@@ -397,6 +397,11 @@
             "format": "double",
             "nullable": true
           },
+          "gaugeZeroMetres": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
           "measuredAt": {
             "type": "string",
             "format": "date-time",

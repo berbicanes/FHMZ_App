@@ -42,9 +42,9 @@
   --color-line: #2a313d;
   --color-line-strong: #616b78;
 
-  --color-text: #e9eef5;
-  --color-text-soft: #aeb7c4;
-  --color-text-muted: #7c8798;
+  --color-fg: #e9eef5;
+  --color-fg-soft: #aeb7c4;
+  --color-fg-muted: #7c8798;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -63,7 +63,7 @@ body,
 
 body {
   background: var(--color-ink-950);
-  color: var(--color-text);
+  color: var(--color-fg);
   font-family: var(--font-sans);
   font-feature-settings: "cv05", "ss03";
   -webkit-font-smoothing: antialiased;
@@ -109,12 +109,12 @@ body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--color-fg-muted);
 }
 
 /* Vidljivo focus stanje na svemu fokusabilnom (UI.md §5). */
 :where(a, button, input, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-text);
+  outline: 2px solid var(--color-fg);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -171,13 +171,13 @@ body {
 
 .maplibregl-ctrl-attrib {
   background: color-mix(in oklab, var(--color-ink-950) 82%, transparent) !important;
-  color: var(--color-text-muted) !important;
+  color: var(--color-fg-muted) !important;
   border-radius: 8px 0 0 0 !important;
   font-size: 11px !important;
 }
 
 .maplibregl-ctrl-attrib a {
-  color: var(--color-text-muted) !important;
+  color: var(--color-fg-muted) !important;
 }
 
 .maplibregl-popup-content {

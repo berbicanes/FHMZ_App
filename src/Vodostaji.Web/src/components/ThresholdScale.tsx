@@ -34,7 +34,7 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
     <section className="mt-5" aria-label="Vodostaj u odnosu na pragove">
       <h3 className="eyebrow mb-3">Pragovi</h3>
 
-      <div className="relative h-3 rounded-full bg-[--color-ink-800] ring-1 ring-[--color-line]">
+      <div className="relative h-3 rounded-full bg-ink-800 ring-1 ring-line">
         {/* Voda do trenutne vrijednosti. Ista plava kao krivulja u grafu ispod — skala i
             graf moraju čitati kao jedan sistem, ne kao dvije nepovezane sličice. */}
         <div
@@ -48,7 +48,7 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
         {thresholds.map((threshold) => (
           <span
             key={threshold.label}
-            className="absolute top-1/2 h-5 w-px -translate-x-1/2 -translate-y-1/2 bg-[--color-ink-500]"
+            className="absolute top-1/2 h-5 w-px -translate-x-1/2 -translate-y-1/2 bg-ink-500"
             style={{ left: `${position(threshold.valueCm)}%` }}
             aria-hidden="true"
           />
@@ -57,7 +57,7 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
         {/* Kazaljka trenutne vrijednosti. Nosi boju statusa jer je to jedina stvar na
             skali koja smije biti najsvjetlija. */}
         <span
-          className="absolute top-1/2 h-6 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-[--color-ink-850]"
+          className="absolute top-1/2 h-6 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-ink-850"
           style={{
             left: `${position(value)}%`,
             backgroundColor: reach.color ?? '#cccccc',
@@ -67,7 +67,7 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
       </div>
 
       {/* Krajevi skale u brojevima — bez njih se ne zna koliki je raspon koji se gleda. */}
-      <div className="tabular mt-1.5 flex justify-between text-[11px] text-[--color-text-muted]">
+      <div className="tabular mt-1.5 flex justify-between text-[11px] text-fg-muted">
         <span>{Math.round(min)} cm</span>
         <span>{Math.round(max)} cm</span>
       </div>
@@ -79,7 +79,7 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
           return (
             <li key={threshold.label} className="flex items-baseline justify-between gap-4">
               <span
-                className={reached ? 'text-[--color-text]' : 'text-[--color-text-muted]'}
+                className={reached ? 'text-fg' : 'text-fg-muted'}
               >
                 {/* Doslovan naziv praga iz izvora — ne prevodimo ga i ne skraćujemo. */}
                 {threshold.label}
@@ -87,9 +87,9 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
               <span className="flex items-baseline gap-2 whitespace-nowrap">
                 {/* Riječima, ne samo bojom (UI.md §5). */}
                 {reached && (
-                  <span className="text-xs text-[--color-text-soft]">dosegnut</span>
+                  <span className="text-xs text-fg-soft">dosegnut</span>
                 )}
-                <span className="tabular text-[--color-text-soft]">
+                <span className="tabular text-fg-soft">
                   {threshold.valueCm} cm
                 </span>
               </span>
@@ -100,7 +100,7 @@ export function ThresholdScale({ reach }: { reach: ReachProperties }) {
 
       {reach.thresholdsDefinedBy && (
         // Prag bez imena onoga ko ga je postavio čita se kao naš (UI.md §3).
-        <p className="mt-2.5 text-xs leading-relaxed text-[--color-text-muted]">
+        <p className="mt-2.5 text-xs leading-relaxed text-fg-muted">
           Pragove definiše {reach.thresholdsDefinedBy}.
         </p>
       )}

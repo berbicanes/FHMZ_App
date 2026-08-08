@@ -43,7 +43,7 @@ export function Search({
           height="15"
           viewBox="0 0 15 15"
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[--color-text-muted]"
+          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-muted"
         >
           <circle cx="6.5" cy="6.5" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
           <path d="M10 10l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -56,7 +56,7 @@ export function Search({
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Rijeka ili mjesto — npr. Maglaj"
           autoComplete="off"
-          className="w-full rounded-[--radius-card] border border-[--color-line-strong] bg-[--color-ink-850] py-2.5 pr-3 pl-9 text-sm placeholder:text-[--color-text-muted] focus:border-[--color-text-soft]"
+          className="w-full rounded-card border border-line-strong bg-ink-850 py-2.5 pr-3 pl-9 text-sm placeholder:text-fg-muted focus:border-fg-soft"
         />
       </div>
 
@@ -64,7 +64,7 @@ export function Search({
         <div className="mt-2" role="status" aria-live="polite">
           {reachHits.length === 0 && stationHits.length === 0 ? (
             /* Prazno stanje kaže šta je traženo i gdje je traženo (UI.md §7). */
-            <p className="px-1 text-sm leading-relaxed text-[--color-text-muted]">
+            <p className="px-1 text-sm leading-relaxed text-fg-muted">
               Ništa se ne poklapa sa „{query}”. Traži se po imenu dionice, rijeke, mjernog
               mjesta i opisu lokacije.
             </p>
@@ -102,11 +102,11 @@ function Group({
             <button
               type="button"
               onClick={() => onOpen(hit)}
-              className="w-full rounded-[--radius-card] px-2 py-1.5 text-left text-sm hover:bg-[--color-ink-800]"
+              className="w-full rounded-card px-2 py-1.5 text-left text-sm hover:bg-ink-800"
             >
               <span className="block">{hit.title}</span>
               {hit.subtitle && (
-                <span className="block truncate text-xs text-[--color-text-muted]">
+                <span className="block truncate text-xs text-fg-muted">
                   {hit.subtitle}
                 </span>
               )}
@@ -115,7 +115,7 @@ function Group({
         ))}
       </ul>
       {hits.length > 8 && (
-        <p className="px-2 text-xs text-[--color-text-muted]">
+        <p className="px-2 text-xs text-fg-muted">
           …i još {hits.length - 8}. Suzi pretragu.
         </p>
       )}

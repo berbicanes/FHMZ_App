@@ -153,7 +153,14 @@ public class AvpSavaReachParserTests
         Assert.Equal(
             [124m, 154m, 344m, 394m],
             thresholds.Values.Select(t => t.ValueCm).ToArray());
-        Assert.Equal("STANDBY_STAT", thresholds.Values[0].LabelOriginal);
+        // Natpis je `alias` polja iz metapodataka njihovog sloja, ne ime kolone. Ime kolone
+        // je tehnicki identifikator; ispisati ga korisniku znaci pokazati mu nasu vodovodnu
+        // instalaciju umjesto onoga sto agencija zove tim pragom.
+        Assert.Equal("Standby status", thresholds.Values[0].LabelOriginal);
+        Assert.Equal("Emergency status", thresholds.Values[3].LabelOriginal);
+        Assert.All(
+            thresholds.Values,
+            t => Assert.DoesNotContain("_", t.LabelOriginal));
     }
 
     [Fact]

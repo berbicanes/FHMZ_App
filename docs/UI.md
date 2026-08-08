@@ -98,3 +98,33 @@ Ukinuta je zabrana, **ne razlog zbog kojeg je postojala.** Zato ostaje kao tvrdo
 - Prazno stanje je poziv na akciju, ne raspoloženje: *"Nema podataka za ovu stanicu od 07:00. Izvor: RHMZ RS."* — ne *"Ups, nešto je pošlo po zlu."*
 - Greške se ne izvinjavaju i nikad nisu nejasne o tome šta se desilo
 - Termin koji korisnik vidi je isti kroz cijeli flow: ako lista kaže "Izljevanje iz korita", detalj ne smije reći "Povišen nivo"
+
+---
+
+## 8. Tailwind v4 — `bg-[--token]` je tiha greška
+
+**Nikad ne pisati `bg-[--color-x]`, `text-[--color-x]`, `rounded-[--radius-x]`.**
+
+U Tailwindu v4 uglaste zagrade znače „uzmi ovu vrijednost doslovno", pa se ime varijable
+ispiše bez `var()`:
+
+```css
+.bg-\[--color-ink-850\] { background-color: --color-ink-850 }   /* nije validan CSS */
+```
+
+Pravilo prođe build bez ijednog upozorenja, prođe typecheck, prođe testove — i **ne radi
+ništa**. Cijela paleta je tako stajala neprimijenjena kroz 176 klasa u 13 fajlova, a
+otkriveno je tek kad je detalj postao plutajuća ploča: bio je proziran, pa se lista ispod
+vidjela kroz njega. Do tada je nedostatak pozadine bio nevidljiv jer iza nje ništa nije
+stajalo, a tamna `body` pozadina je popunjavala rupu.
+
+Ispravno je koristiti **utilitije koje `@theme` sam generiše**: token `--color-ink-850`
+daje `bg-ink-850`, `--radius-card` daje `rounded-card`. Zato su tokeni za tekst nazvani
+`--color-fg*`, a ne `--color-text*` — inače bi klasa bila `text-text-muted`.
+
+Provjera koja hvata povratak greške:
+
+```bash
+grep -rn "\[--color-\|\[--radius-" src --include="*.tsx"   # mora biti prazno
+grep -o "background-color:--" dist/assets/*.css            # mora biti prazno
+```

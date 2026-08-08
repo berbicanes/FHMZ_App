@@ -62,7 +62,7 @@ export function DisclaimerBar() {
       <button
         type="button"
         onClick={dismiss}
-        className="shrink-0 rounded-[--radius-chip] border border-[#7a5a1a] px-3 py-1 text-xs text-[#ffd98a] hover:bg-[#33270a]"
+        className="shrink-0 rounded-chip border border-[#7a5a1a] px-3 py-1 text-xs text-[#ffd98a] hover:bg-[#33270a]"
       >
         Razumijem
       </button>
@@ -76,7 +76,7 @@ export function DisclaimerBar() {
  */
 export function PersistentDisclaimer() {
   return (
-    <p className="text-xs leading-relaxed text-[--color-text-muted]">
+    <p className="text-xs leading-relaxed text-fg-muted">
       Podaci nisu zvanični i ne služe za odbranu od poplava. Preuzeti su iz javnih izvora
       nadležnih agencija; izvor je naveden uz svaku dionicu.
     </p>

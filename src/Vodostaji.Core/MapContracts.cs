@@ -35,6 +35,17 @@ public sealed record ReachProperties
 
     public decimal? ValueCm { get; init; }
 
+    /// <summary>
+    /// Kota nule vodomjerne letve, u metrima nadmorske visine, kad je agencija objavi.
+    ///
+    /// Bez ovoga se **negativan vodostaj ne da objasniti**, a negativnih ima: Jala u Tuzli
+    /// stoji na -23 cm. To nije greška ni u izvoru ni kod nas — vodostaj se mjeri u odnosu
+    /// na nulu letve, a ne od dna korita, pa voda ispod te nule daje negativan broj. Nula
+    /// letve je proizvoljno odabrana visina (za Tuzlu 221.921 m n.v.), i tek uz nju broj
+    /// ima smisla.
+    /// </summary>
+    public decimal? GaugeZeroMetres { get; init; }
+
     /// <summary>Kad je izmjereno. Nikad se ne miješa sa <see cref="FetchedAt"/>.</summary>
     public DateTimeOffset? MeasuredAt { get; init; }
 

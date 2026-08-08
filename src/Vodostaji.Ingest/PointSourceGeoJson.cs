@@ -109,6 +109,7 @@ public static class PointSourceGeoJson
             StationKey = reading.Station.StationKey,
             Name = reading.Station.Name,
             River = reading.Station.River,
+            GaugeZeroMetres = reading.Station.GaugeZero,
 
             Level = reading.Level.ToString(),
             LevelLabel = legend.Label(reading),

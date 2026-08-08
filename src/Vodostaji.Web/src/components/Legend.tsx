@@ -42,7 +42,7 @@ function Swatch({
 export function SavaLegend({ agencyName }: { agencyName: string }) {
   return (
     <div>
-      <p className="mb-2 text-xs text-[--color-text-muted]">{agencyName}</p>
+      <p className="mb-2 text-xs text-fg-muted">{agencyName}</p>
 
       <ul className="space-y-1.5">
         {SAVA_ENTRIES.map((entry) => (
@@ -57,7 +57,7 @@ export function SavaLegend({ agencyName }: { agencyName: string }) {
         </li>
       </ul>
 
-      <p className="mt-3 rounded-[--radius-card] border border-[--color-line] bg-[--color-ink-850] px-3 py-2.5 text-xs leading-relaxed">
+      <p className="mt-3 rounded-card border border-line bg-ink-850 px-3 py-2.5 text-xs leading-relaxed">
         <strong className="font-semibold">
           Boja pokazuje stanje rijeke na toj dionici, ne poplavljeno područje.
         </strong>{' '}
@@ -65,7 +65,7 @@ export function SavaLegend({ agencyName }: { agencyName: string }) {
         sa mjerila na toj rijeci.
       </p>
 
-      <p className="mt-2 text-xs leading-relaxed text-[--color-text-muted]">
+      <p className="mt-2 text-xs leading-relaxed text-fg-muted">
         Bljeđa boja znači da je jedno ili više mjerenja izostalo; isprekidana ivica da su
         izostala više od tri. Starost se računa od trenutka kad podatak realno može stići, jer
         izvor objavljuje sa zastojem.
@@ -88,7 +88,7 @@ export function PointSourceLegend({
 }) {
   return (
     <div>
-      <p className="mb-2 text-xs text-[--color-text-muted]">{agencyName}</p>
+      <p className="mb-2 text-xs text-fg-muted">{agencyName}</p>
 
       <ul className="space-y-1.5">
         <li className="flex items-center gap-2.5 text-sm">
@@ -102,7 +102,7 @@ export function PointSourceLegend({
         </li>
       </ul>
 
-      <p className="mt-3 text-xs leading-relaxed text-[--color-text-muted]">{note}</p>
+      <p className="mt-3 text-xs leading-relaxed text-fg-muted">{note}</p>
     </div>
   )
 }

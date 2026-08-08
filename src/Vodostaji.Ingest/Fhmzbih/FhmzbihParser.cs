@@ -144,7 +144,21 @@ public static class FhmzbihParser
             SourceId = FhmzbihSource.Id,
             StationKey = name,
             Name = name,
-            River = details?.River ?? (river.Length > 0 ? river : null),
+            // Pregledna tabela ima prednost nad podstranicom, i to je **namjerno obrnuto**
+            // od onoga što je ovdje prvo stajalo.
+            //
+            // Agencija sama sebi protivrječi. Za Vrhpolje njihova podstranica piše
+            // `rijeka: Una, sliv: Sava`, a oba su pogrešna i to na isti način — pomjerena su
+            // za jedno mjesto uzvodno: Vrhpolje je na **Sani**, koja se ulijeva u Unu, koja
+            // se ulijeva u Savu. Njihova pregledna tabela za istu stanicu piše Sana, tačno.
+            // (Za Sanski Most podstranica piše `rijeka: Sana, sliv: Una` — tačno. Greška je
+            // na jednoj stanici, ne u cijelom polju.)
+            //
+            // Tabela pobjeđuje jer je njena tvrdnja **strukturna**: rijeka je jedna ćelija sa
+            // `rowspan` koja natkriva sve svoje stanice, pa je pogriješiti znači pogriješiti
+            // cijelu grupu odjednom. Polje na podstranici je samostalan unos po stanici i
+            // nema ga šta ispraviti. Podstranica ostaje rezerva za stanice kojih u grupi nema.
+            River = (river.Length > 0 ? river : null) ?? details?.River,
             Coordinates = details?.Coordinates,
             GaugeZero = details?.GaugeZero,
             ExpectedInterval = expectedInterval,

@@ -185,6 +185,8 @@ export interface components {
             statusLabelOriginal: string | null;
             /** Format: double */
             valueCm?: number | null;
+            /** Format: double */
+            gaugeZeroMetres?: number | null;
             /** Format: date-time */
             measuredAt?: string | null;
             /** Format: date-time */

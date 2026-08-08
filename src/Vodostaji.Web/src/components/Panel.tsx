@@ -23,14 +23,14 @@ export function Section({
   const id = useId()
 
   return (
-    <section className="border-b border-[--color-line] last:border-b-0">
+    <section className="border-b border-line last:border-b-0">
       <h2>
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
           aria-controls={id}
-          className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-[--color-ink-850]"
+          className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-ink-850"
         >
           <span className="eyebrow flex-1">{title}</span>
           {badge}
@@ -39,7 +39,7 @@ export function Section({
             height="12"
             viewBox="0 0 12 12"
             aria-hidden="true"
-            className="shrink-0 text-[--color-text-muted] transition-transform duration-200"
+            className="shrink-0 text-fg-muted transition-transform duration-200"
             style={{ transform: open ? 'rotate(90deg)' : 'none' }}
           >
             <path

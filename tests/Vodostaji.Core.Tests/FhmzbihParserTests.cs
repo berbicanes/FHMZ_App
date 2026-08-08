@@ -16,6 +16,7 @@ public class FhmzbihParserTests
     private const string IndexFixture = "fhmzbih/hidro-index-2026-08-05.html";
     private const string ZenicaFixture = "fhmzbih/hvs-zenica-2026-08-05.html";
     private const string BihacFixture = "fhmzbih/hvs-bihac-2026-08-05.html";
+    private const string VrhpoljeFixture = "fhmzbih/hvs-vrhpolje-2026-08-08.html";
 
     private static readonly Attribution Attribution = new()
     {
@@ -202,6 +203,58 @@ public class FhmzbihParserTests
         // Bez koordinata stanica ne može na mapu; pregled ih ne daje, podstranica daje.
         Assert.NotNull(zenica.Station.Coordinates);
         Assert.Equal(307.600m, zenica.Station.GaugeZero);
+    }
+
+    /// <summary>
+    /// Agencija sama sebi protivrječi oko rijeke, i mi biramo tačniju stranu.
+    ///
+    /// Njihova podstranica za Vrhpolje piše `rijeka: Una, sliv: Sava`. Oba su pomjerena za
+    /// jedno mjesto uzvodno: Vrhpolje je na **Sani**, koja teče u Unu, koja teče u Savu.
+    /// Njihova pregledna tabela za istu stanicu piše Sana — tačno, jer je rijeka tamo jedna
+    /// `rowspan` ćelija nad cijelom grupom stanica, pa se ne da pogriješiti za jednu.
+    /// </summary>
+    [Fact]
+    public void Rijeka_iz_pregleda_pobjeduje_nad_pogresnom_podstranicom()
+    {
+        var podstranica = FhmzbihParser.ParseStationPage(
+            Fixture.Read(VrhpoljeFixture), "Vrhpolje");
+
+        // Prvo se dokazuje da je greška njihova, a ne naša u čitanju.
+        Assert.Equal("Una", podstranica!.River);
+
+        var details = new Dictionary<string, FhmzbihStationDetails>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Vrhpolje"] = podstranica,
+        };
+
+        var vrhpolje = ParseIndex(details).Readings.Single(r => r.Station.Name == "Vrhpolje");
+
+        Assert.Equal("Sana", vrhpolje.Station.River);
+
+        // Podstranica i dalje mora dopuniti ono što pregled nema — ispravka rijeke se ne
+        // smije pretvoriti u odbacivanje cijele podstranice.
+        Assert.Equal(177.640m, vrhpolje.Station.GaugeZero);
+        Assert.NotNull(vrhpolje.Station.Coordinates);
+    }
+
+    [Fact]
+    public void Podstranica_ostaje_izvor_rijeke_kad_je_pregled_nema()
+    {
+        // Red bez `rowspan` ćelije nasljeđuje rijeku prethodne grupe; kad ni toga nema,
+        // podstranica je jedino što preostaje. Rezerva mora ostati živa.
+        const string html =
+            "<table><tr><td>Sanski Most</td><td>5.8.2026</td><td>08:00</td>"
+            + "<td>76</td><td>S</td><td>310</td></tr></table>";
+
+        var details = new Dictionary<string, FhmzbihStationDetails>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Sanski Most"] = new("Sanski Most", null, null, "Sana", "Una"),
+        };
+
+        var parsed = FhmzbihParser.ParseIndex(
+            html, Clock, Attribution, TimeSpan.FromHours(1), TimeSpan.FromHours(1), details);
+
+        Assert.Equal("Sana", parsed.Readings.Single().Station.River);
     }
 
     [Fact]

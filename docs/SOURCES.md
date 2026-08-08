@@ -47,10 +47,12 @@ Poligoni **dionica**, ne tačke stanica. **45 dionica ukupno**, jedan sloj.
 | `HYDRO_ID` | Double | veza na registar stanica (`HID_ID`) |
 | `H_CM` | **Single** | vodostaj u cm; **može biti negativan** (viđeno `-28.2`) |
 | `DATE_TIME` | Date | epoch ms, **pravi UTC** — vidi §1.6 |
-| `STANDBY_STAT` | Integer | prag, cm |
-| `REGULAR_DEF_ST` | Integer | prag, cm |
-| `OUTSTANDING_ST` | Integer | prag, cm |
-| `EMERGENCY_ST` | Integer | prag, cm |
+| `STANDBY_STAT` | Integer | prag, cm — alias `Standby status (cm)` |
+| `REGULAR_DEF_ST` | Integer | prag, cm — alias `Regular defence status (cm)` |
+| `OUTSTANDING_ST` | Integer | prag, cm — alias `Outstanding defence status (cm)` |
+| `EMERGENCY_ST` | Integer | prag, cm — alias `Emergency status (cm)` |
+
+**Natpisi pragova dolaze iz `alias` polja u metapodacima sloja** (`FeatureServer/0?f=json`, očitano 2026-08-08), ne iz imena kolone. Do tada je na ekranu pisalo „STANDBY_STAT je na 283 cm" — tehnički identifikator umjesto natpisa. Aliasi su na engleskom jer ih agencija tako objavljuje; prevod bi bio naša tvrdnja o semantici praga, a to zabranjuje zlatno pravilo 3. Skida se samo sufiks `(cm)`, jer jedinica već stoji uz broj.
 | `Shape__Area`, `Shape__Length` | Double | |
 
 `H_CM` je `esriFieldTypeSingle` — stiže sa artefaktima jednostruke preciznosti (`17.6000004`).
@@ -338,6 +340,38 @@ po stanici, ne po izvoru.
 
 Uloga: cross-check za sliv Save i pokrivač rupa. Zato što objavljuje **lokalno vrijeme
 eksplicitno**, ovo je i alat za rješavanje otvorenog pitanja oko `DATE_TIME` u §1.
+
+### 3.1 Agencija sama sebi protivrječi oko rijeke — provjereno 2026-08-08
+
+Isti izvor daje ime rijeke na dva mjesta i ta dva mjesta se ne slažu.
+
+| Stanica | Pregledna tabela | Podstranica `rijeka` | Podstranica `sliv` | Stvarno |
+|---|---|---|---|---|
+| Sanski Most | Sana | Sana | Una | Sana ✓ |
+| **Vrhpolje** | **Sana** | **Una** | **Sava** | **Sana** |
+
+Za Vrhpolje su oba polja na podstranici pomjerena za jedno mjesto nizvodno: Vrhpolje je na
+Sani → Sana se ulijeva u Unu → Una u Savu. Njihova pregledna tabela je tačna.
+
+**Odluka: pregledna tabela pobjeđuje, podstranica je rezerva.** Ne zato što je jedna
+„službenija", nego zato što je tvrdnja tabele **strukturna** — rijeka je jedna ćelija sa
+`rowspan` koja natkriva cijelu grupu stanica, pa je pogriješiti znači pogriješiti sve
+stanice te rijeke odjednom, što se odmah vidi. Polje na podstranici je samostalan unos po
+stanici i nema ga šta ispraviti.
+
+Podstranica ostaje jedini izvor koordinata i kote nule, pa se ne odbacuje — ispravlja se
+samo rijeka. Test: `Rijeka_iz_pregleda_pobjeduje_nad_pogresnom_podstranicom`.
+
+### 3.2 Negativan vodostaj je ispravan podatak
+
+Jala u Tuzli stoji na −23 cm, i to nije greška. Vodostaj se mjeri od **nule vodomjerne
+letve**, a ne od dna korita; nula letve je proizvoljno odabrana visina koju agencija
+objavljuje (`Kota "0" vodomjera`, za Tuzlu 221.921 m n.v.). Voda ispod te nule daje
+negativan broj.
+
+Zato `GaugeZeroMetres` ide u `ReachProperties` i UI ga ispisuje uz svaki negativan
+vodostaj. Bez toga minus izgleda kao kvar aplikacije, a onda i sve ostalo na ekranu gubi
+kredibilitet.
 
 ---
 

@@ -99,6 +99,7 @@ public static class AvpSavaReachGeoJson
             StationKey = reading.Station.StationKey,
             Name = reading.Station.Name,
             River = reading.Station.River,
+            GaugeZeroMetres = reading.Station.GaugeZero,
 
             Level = reading.Level.ToString(),
             LevelLabel = AvpSavaLegend.Label(reading.Level),

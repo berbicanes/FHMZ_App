@@ -41,7 +41,7 @@ export function StatusDot({
  */
 export function StatusPill({ reach }: { reach: ReachProperties }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-[--radius-chip] border border-[--color-line] bg-[--color-ink-800] px-2.5 py-1 text-xs font-medium">
+    <span className="inline-flex items-center gap-2 rounded-chip border border-line bg-ink-800 px-2.5 py-1 text-xs font-medium">
       <StatusDot reach={reach} size={10} />
       <span>{reach.levelLabel}</span>
     </span>

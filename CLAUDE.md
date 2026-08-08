@@ -3,7 +3,7 @@
 Jedna mapa sa stanjem svih rijeka u BiH, u realnom vremenu, besplatno. Danas su podaci razbijeni na četiri agencije i tri sajta; korisnik ne treba znati ništa o slivovima ni entitetima.
 
 **Trenutno stanje: `FAZA 4 — tri izvora rade; ostaje RHMZ RS i Brčko.`**
-82 testa u .NET-u, 38 u web-u. AVP Sava (45 dionica, **sa** ocjenom), AVPJM (20 stanica) i
+84 testa u .NET-u, 69 u web-u. AVP Sava (45 dionica, **sa** ocjenom), AVPJM (20 stanica) i
 FHMZBIH (12 stanica, **objavljuje trend**) rade kao zasebni pipelinei sa zasebnim legendama.
 Nijedna od te dvije zadnje agencije ne objavljuje stupanj opasnosti javnosti.
 Rute su `/dionica/{izvor}/{ključ}` jer ključ nije globalan.

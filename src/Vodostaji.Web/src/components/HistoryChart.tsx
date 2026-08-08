@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Area,
@@ -12,6 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { ReachHistory, ReachThreshold } from '../api/types'
+import { cm, seriesSummary } from '../lib/derived'
 
 type Range = 7 | 30
 
@@ -79,16 +80,24 @@ export function HistoryChart({
   }, [points, thresholds])
 
   const last = points.at(-1)
+  const summary = useMemo(() => seriesSummary(points.map((p) => p.value)), [points])
 
   return (
     <section className="mt-5" aria-label="Historija vodostaja">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="eyebrow">Historija</h3>
+        <h3 className="eyebrow">
+          Historija
+          {summary && (
+            <span className="ml-2 font-normal normal-case tracking-normal text-fg-muted">
+              {summary.count} {summary.count === 1 ? 'očitanje' : 'očitanja'}
+            </span>
+          )}
+        </h3>
 
         <div
           role="group"
           aria-label="Raspon grafa"
-          className="flex rounded-[--radius-chip] border border-[--color-line] bg-[--color-ink-800] p-0.5"
+          className="flex rounded-chip border border-line bg-ink-800 p-0.5"
         >
           {([7, 30] as const).map((option) => (
             <button
@@ -96,10 +105,10 @@ export function HistoryChart({
               type="button"
               onClick={() => setDays(option)}
               aria-pressed={days === option}
-              className={`rounded-[--radius-chip] px-2.5 py-1 text-xs transition-colors ${
+              className={`rounded-chip px-2.5 py-1 text-xs transition-colors ${
                 days === option
-                  ? 'bg-[--color-ink-600] text-[--color-text]'
-                  : 'text-[--color-text-muted] hover:text-[--color-text-soft]'
+                  ? 'bg-ink-600 text-fg'
+                  : 'text-fg-muted hover:text-fg-soft'
               }`}
             >
               {option} dana
@@ -109,17 +118,17 @@ export function HistoryChart({
       </div>
 
       {history.isPending && (
-        <div className="h-[300px] animate-pulse rounded-[--radius-card] bg-[--color-ink-800] xl:h-[360px]" />
+        <div className="h-[300px] animate-pulse rounded-card bg-ink-800 xl:h-[360px]" />
       )}
 
       {history.isError && (
-        <p className="text-sm text-[--color-text-muted]">{(history.error as Error).message}</p>
+        <p className="text-sm text-fg-muted">{(history.error as Error).message}</p>
       )}
 
       {history.data && points.length === 0 && (
         /* Prazan graf mora reći zašto je prazan. „Tek smo počeli skupljati" i „izvor je pao"
            izgledaju identično na ekranu (UI.md §7). */
-        <p className="rounded-[--radius-card] border border-[--color-line] bg-[--color-ink-850] px-3 py-3 text-sm leading-relaxed text-[--color-text-muted]">
+        <p className="rounded-card border border-line bg-ink-850 px-3 py-3 text-sm leading-relaxed text-fg-muted">
           {history.data.collectingSince
             ? `Za posljednjih ${days} dana nema zapisa. Historiju za ovu dionicu skupljamo od ${new Date(
                 history.data.collectingSince,
@@ -131,7 +140,7 @@ export function HistoryChart({
       {history.data && points.length > 0 && domain && (
         <>
           {points.length < 4 && (
-            <p className="mb-2 text-xs leading-relaxed text-[--color-text-muted]">
+            <p className="mb-2 text-xs leading-relaxed text-fg-muted">
               Zasad {points.length} {points.length === 1 ? 'očitanje' : 'očitanja'} — premalo za
               oblik krivulje. Agencija ne objavljuje arhivu, pa graf raste iz onoga što skupimo.
             </p>
@@ -253,11 +262,11 @@ export function HistoryChart({
           </div>
 
           {/* Osa nosi samo brojeve; jedinica stoji jednom, ispod. */}
-          <div className="mt-2 flex items-baseline justify-between text-xs text-[--color-text-muted]">
+          <div className="mt-2 flex items-baseline justify-between text-xs text-fg-muted">
             <span>cm</span>
             {last && (
               <span className="tabular">
-                zadnje: {last.value} cm ·{' '}
+                zadnje: {cm(last.value)} cm ·{' '}
                 {new Date(last.t).toLocaleString('bs-BA', {
                   day: 'numeric',
                   month: 'numeric',
@@ -268,9 +277,22 @@ export function HistoryChart({
             )}
           </div>
 
+          {/*
+           * Sažetak prozora. Opis skupa brojeva, ne ocjena o njima — „najviše u 7 dana"
+           * je činjenica o **našim zapisima**, i zato uz njega stoji koliko ih je uopšte.
+           * Bez tog broja bi „najviše: 214 cm" iz tri očitanja izgledalo kao iz tri stotine.
+           */}
+          {summary && (
+            <dl className="mt-3 grid grid-cols-3 gap-1.5">
+              <Stat label="Najniže">{cm(summary.min)} cm</Stat>
+              <Stat label="Najviše">{cm(summary.max)} cm</Stat>
+              <Stat label="Raspon">{cm(summary.span)} cm</Stat>
+            </dl>
+          )}
+
           {thresholds.length > 0 && history.data.thresholdsDefinedBy && (
             // Prag bez imena onoga ko ga je postavio čita se kao naš (UI.md §3).
-            <p className="mt-2 text-xs leading-relaxed text-[--color-text-muted]">
+            <p className="mt-2 text-xs leading-relaxed text-fg-muted">
               Isprekidane linije su pragovi. Definiše ih {history.data.thresholdsDefinedBy}.
             </p>
           )}
@@ -287,6 +309,15 @@ export function HistoryChart({
  * tihe da bi se takmičile sa trenutnim stanjem na mapi ili sa samom krivuljom. Ne nose ocjenu;
  * pokazuju gdje su granice koje je agencija povukla.
  */
+function Stat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="rounded-card border border-line bg-ink-900 px-2.5 py-2">
+      <dt className="eyebrow">{label}</dt>
+      <dd className="numeric mt-0.5 text-sm font-semibold">{children}</dd>
+    </div>
+  )
+}
+
 const BAND_COLORS = [
   'rgb(56 168 0 / 0.07)',
   'rgb(255 255 0 / 0.07)',

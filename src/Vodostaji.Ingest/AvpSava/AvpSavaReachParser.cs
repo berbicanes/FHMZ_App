@@ -37,12 +37,25 @@ public static class AvpSavaReachParser
     /// vrijednosti i pragova. Zlatno pravilo 3 nije samo načelo nego i jedini ispravan način
     /// da se ovaj izvor pročita.
     /// </summary>
-    private static readonly (string Field, AlertLevel Level)[] ThresholdFields =
+    /// <summary>
+    /// Pragovi, sa natpisom koji dolazi **od agencije**.
+    ///
+    /// `Label` nije naš prevod nego `alias` polja iz metapodataka njihovog sloja
+    /// (`FeatureServer/0?f=json`, očitano 2026-08-08) — dakle njihova riječ za njihov prag.
+    /// Ranije je ovdje kao natpis stajalo ime kolone, pa je na ekranu pisalo
+    /// „STANDBY_STAT je na 283 cm". To je bila naša greška u prikazu, ne njihova u podacima.
+    ///
+    /// Natpisi su na engleskom jer ih agencija tako objavljuje. Prevod na bosanski bi bio
+    /// naša tvrdnja o tome šta koji prag znači, a semantika pragova je tačno ono što se ne
+    /// smije izmišljati (zlatno pravilo 3). Jedino što se skida je sufiks `(cm)` — jedinica
+    /// već stoji uz sam broj.
+    /// </summary>
+    private static readonly (string Field, string Label, AlertLevel Level)[] ThresholdFields =
     [
-        ("STANDBY_STAT", AlertLevel.Normal),
-        ("REGULAR_DEF_ST", AlertLevel.Elevated),
-        ("OUTSTANDING_ST", AlertLevel.Flood),
-        ("EMERGENCY_ST", AlertLevel.Emergency),
+        ("STANDBY_STAT", "Standby status", AlertLevel.Normal),
+        ("REGULAR_DEF_ST", "Regular defence status", AlertLevel.Elevated),
+        ("OUTSTANDING_ST", "Outstanding defence status", AlertLevel.Flood),
+        ("EMERGENCY_ST", "Emergency status", AlertLevel.Emergency),
     ];
 
     public static ParsedReaches Parse(
@@ -213,11 +226,11 @@ public static class AvpSavaReachParser
     {
         var values = new List<Threshold>();
 
-        foreach (var (field, level) in ThresholdFields)
+        foreach (var (field, label, level) in ThresholdFields)
         {
             if (Decimal(attributes, field) is { } value)
             {
-                values.Add(new Threshold(field, value, level));
+                values.Add(new Threshold(label, value, level));
             }
         }
 
