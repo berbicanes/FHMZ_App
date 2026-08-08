@@ -58,7 +58,11 @@ public sealed class EfHistoryReader(VodostajiDbContext context)
             {
                 var stored = JsonSerializer.Deserialize<List<Threshold>>(json);
                 thresholds = stored?
-                    .Select(t => new ReachThreshold(t.LabelOriginal, t.ValueCm, t.Level?.ToString()))
+                    .Select(t => new ReachThreshold(
+                        ThresholdNames.Display(t.LabelOriginal),
+                        t.ValueCm,
+                        t.Level?.ToString(),
+                        t.LabelOriginal))
                     .ToList();
             }
             catch (JsonException)

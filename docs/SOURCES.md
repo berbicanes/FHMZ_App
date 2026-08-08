@@ -482,6 +482,79 @@ najviše.
 
 ---
 
+## 4.5 AVP Sava ima **drugi, bogatiji sistem** — WISKI — nađeno 2026-08-08
+
+Cijeli projekat je do sada stajao na jednom ArcGIS sloju sa 45 dionica. Njihov javni sajt
+`vodostaji.voda.ba` ne koristi taj sloj nego **KISTERS WISKI**, i objavljuje mnogo više.
+
+Kako je nađen: stranica je Dojo ljuska sa paketom `static-wiski-web-public`. U `init.js`
+stoji `f.targetUrl + "internet/index.json"`, a `targetUrl` je `/data/`. Nije živi KiWIS API
+(`/KiWIS/` vraća 403) nego **statički izvoz** gotovih JSON fajlova.
+
+```
+https://vodostaji.voda.ba/data/internet/index.json          korijen
+https://vodostaji.voda.ba/data/internet/layers/index.json   spisak parametara
+https://vodostaji.voda.ba/data/internet/layers/{id}/index.json   zadnja vrijednost po stanici
+https://vodostaji.voda.ba/data/internet/stations/index.json
+```
+
+### Slojevi i njihova upotrebljivost — mjereno 2026-08-08 21:30 UTC
+
+| id | parametar | jed. | stanica | svježe <6h | >48h | najstarije | odluka |
+|---|---|---|---|---|---|---|---|
+| 10 | Vodostaj | cm | 98 | 91 | 4 | 402 dana | **uzeti** |
+| 20 | Proticaj | m³/s | 60 | 58 | 1 | 4 dana | **uzeti** |
+| 30 | Temperatura vode | °C | 13 | 13 | 0 | — | **uzeti** |
+| 60 | Količina padavina | mm | 25 | 25 | 0 | — | uzeti |
+| 70 | Temperatura zraka | °C | 25 | 25 | 0 | — | uzeti |
+| 40 | Nivo podzemne vode | m | 28 | **0** | 27 | 71 dan | uzeti, ali nikad kao stanje |
+| 50 | Temp. podzemne vode | °C | 24 | **0** | 24 | 132 dana | uzeti, ali nikad kao stanje |
+| 80 | EPPVodostaj | cm | 81 | 9 | 9 | 396 dana | ne — 59 od 81 bez vremena |
+| 90 | EPPProticaj | m³/s | 40 | 3 | 2 | 151 dan | ne — 35 od 40 bez vremena |
+
+Slojevi 40 i 50 nemaju **nijedno** očitanje mlađe od 48 h. Prikazati ih kao trenutno stanje
+značilo bi tvrditi da znamo nešto od prije četiri mjeseca — zlatno pravilo 2. Povlače se, ali
+ulaze kao izričito zastarjeli.
+
+### Šta jedan zapis nosi
+
+```json
+{ "L1_ts_value": "22.0", "L1_ts_unitsymbol": "°C",
+  "L1_timestamp": "2026-08-08T21:00:00.000+02:00",
+  "L1_stationparameter_no": "WT", "L1_ts_precision": "Deci,1,0,0",
+  "metadata_station_name": "HS Bliha", "metadata_station_no": "9019",
+  "metadata_station_latitude": "44.77190023621821",
+  "metadata_station_longitude": "16.643788245361893",
+  "metadata_river_name": "Bliha", "metadata_catchment_name": "Una",
+  "metadata_station_elevation": "796.96", "metadata_CATCHMENT_SIZE": "142.46 km²",
+  "L1_web_waterlevel_class": "#MIN#" }
+```
+
+Tri stvari koje ovaj izvor rješava, a stari nije mogao:
+
+1. **`L1_timestamp` nosi eksplicitan pomak** (`+02:00`). Nema pogađanja vremenske zone, nema
+   DST rekonstrukcije — cijeli §1.6 i §2 problem ovdje ne postoji.
+2. **Prave koordinate po stanici.** Stari sloj daje poligone dionica prosječne površine
+   339 km² i nijednu tačku (§1.7); zbog toga je i postojala cijela rasprava o tome kako
+   obojena dionica ne smije izgledati kao poplavljeno područje.
+3. **`metadata_river_name` je iz njihove baze**, ne izveden iz imena crticom kao u §1.1.
+
+### `L1_web_waterlevel_class` se NE pretvara u stupanj opasnosti
+
+Vrijednosti u uzorku: `#MIN#` (79), `None` (17), `#<MIN#` (1), `#TH1#` (1). Oblik odaje
+klase pragova (`TH1` = threshold 1), ali legenda nije objavljena i 17 stanica nema nikakvu
+klasu. Mapirati `#TH1#` u konkretan stepen opasnosti bilo bi pogađanje semantike praga —
+zlatno pravilo 3. Prikazuje se doslovno, kao tekst, i ništa se iz njega ne izvodi.
+
+### Otvoreno
+
+- Kojom dinamikom se izvoz osvježava? Mjeriti kroz `--watch`, ne pretpostavljati.
+- Da li se `metadata_station_no` poklapa sa `HYDRO_ID` iz §1.7 — ako da, dionice i stanice
+  se konačno mogu povezati.
+- 402 dana stara stanica u sloju 10: ugašena ili pokvarena? Ne briše se, prikazuje se stara.
+
+---
+
 ## 5. Sava FFWS / Sava HIS — istražiti, ne graditi
 
 Sava FFWS integriše data hub za osmotrene podatke (Sava HIS) preko šest zemalja. Za BiH su

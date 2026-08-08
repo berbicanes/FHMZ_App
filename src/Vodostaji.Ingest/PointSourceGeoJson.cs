@@ -149,7 +149,11 @@ public static class PointSourceGeoJson
 
             Thresholds = reading.Thresholds is { IsEmpty: false } thresholds
                 ? [.. thresholds.Values.Select(t =>
-                    new ReachThreshold(t.LabelOriginal, t.ValueCm, t.Level?.ToString()))]
+                    new ReachThreshold(
+                        ThresholdNames.Display(t.LabelOriginal),
+                        t.ValueCm,
+                        t.Level?.ToString(),
+                        t.LabelOriginal))]
                 : null,
             ThresholdsDefinedBy = reading.Thresholds is { IsEmpty: false } defined
                 ? defined.DefinedBy

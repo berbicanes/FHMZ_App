@@ -113,7 +113,19 @@ public sealed record ReachProperties
     public string? ThresholdsDefinedBy { get; init; }
 }
 
-public sealed record ReachThreshold(string Label, decimal ValueCm, string? Level);
+/// <summary>
+/// Prag kako se prikazuje, i kako ga izvor zove.
+///
+/// <see cref="Label"/> je ono što korisnik čita; <see cref="LabelOriginal"/> je doslovan
+/// natpis izvora i **uvijek putuje uz njega**. Dva polja postoje da bi prevod ostao
+/// provjerljiv: ako je bosanski naziv pogrešan, original stoji odmah do njega i vidi se.
+/// Kad prevoda nema, oba su ista.
+/// </summary>
+public sealed record ReachThreshold(
+    string Label,
+    decimal ValueCm,
+    string? Level,
+    string LabelOriginal);
 
 /// <summary>Prethodno očitanje, kako ga graditelj GeoJSON-a prima iz skladišta.</summary>
 public sealed record PreviousMeasurement(decimal ValueCm, DateTimeOffset MeasuredAt);
